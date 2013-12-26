@@ -19,6 +19,7 @@ interestingEcalDetIdEE = RecoEcal.EgammaClusterProducers.interestingDetIdCollect
 
 #SuperClusters for GED reco
 import RecoEcal.EgammaClusterProducers.interestingDetIdFromSuperClusterProducer_cfi
+import RecoEcal.EgammaClusterProducers.interestingESDetIdFromSuperClusterProducer_cfi
 
 interestingEcalDetIdPFEB = RecoEcal.EgammaClusterProducers.interestingDetIdFromSuperClusterProducer_cfi.interestingDetIdFromSuperClusterProducer.clone(
     superClustersLabel = cms.InputTag("particleFlowSuperClusterECAL","particleFlowSuperClusterECALBarrel"),
@@ -28,6 +29,11 @@ interestingEcalDetIdPFEB = RecoEcal.EgammaClusterProducers.interestingDetIdFromS
 interestingEcalDetIdPFEE = RecoEcal.EgammaClusterProducers.interestingDetIdFromSuperClusterProducer_cfi.interestingDetIdFromSuperClusterProducer.clone(
     superClustersLabel = cms.InputTag("particleFlowSuperClusterECAL","particleFlowSuperClusterECALEndcapWithPreshower"),
     recHitsLabel = cms.InputTag("ecalRecHit","EcalRecHitsEE")
+    )
+
+interestingEcalDetIdPFES = RecoEcal.EgammaClusterProducers.interestingESDetIdFromSuperClusterProducer_cfi.interestingESDetIdFromSuperClusterProducer.clone(
+    superClustersLabel = cms.InputTag("particleFlowSuperClusterECAL","particleFlowSuperClusterECALEndcapWithPreshower"),
+    recHitsLabel = cms.InputTag("ecalPreshowerRecHit","EcalRecHitsES")
     )
     
 interestingEcalDetIdRefinedEB = RecoEcal.EgammaClusterProducers.interestingDetIdFromSuperClusterProducer_cfi.interestingDetIdFromSuperClusterProducer.clone(
@@ -39,6 +45,11 @@ interestingEcalDetIdRefinedEE = RecoEcal.EgammaClusterProducers.interestingDetId
     superClustersLabel = cms.InputTag("particleFlowEGamma",""),
     recHitsLabel = cms.InputTag("ecalRecHit","EcalRecHitsEE")
     )    
+
+interestingEcalDetIdRefinedES = RecoEcal.EgammaClusterProducers.interestingESDetIdFromSuperClusterProducer_cfi.interestingESDetIdFromSuperClusterProducer.clone(
+    superClustersLabel = cms.InputTag("particleFlowEGamma",""),
+    recHitsLabel = cms.InputTag("ecalPreshowerRecHit","EcalRecHitsES")
+    )
     
 # rechits associated to high pt tracks for HSCP
 
@@ -98,19 +109,21 @@ reducedEcalRecHitsEE = cms.EDProducer("ReducedRecHitCollectionProducer",
 reducedEcalRecHitsES = cms.EDProducer("ReducedESRecHitCollectionProducer",
                                       scEtThreshold = cms.double(15),
                                       EcalRecHitCollectionES = cms.InputTag('ecalPreshowerRecHit','EcalRecHitsES'),
-                                      EndcapSuperClusterCollection = cms.InputTag("particleFlowSuperClusterECAL",
-                                      "particleFlowSuperClusterECALEndcapWithPreshower"),
+                                      EndcapSuperClusterCollection = cms.InputTag('correctedMulti5x5SuperClustersWithPreshower'),
                                       OutputLabel_ES = cms.string(''),
-                                      interestingDetIds = cms.VInputTag()
+                                      interestingDetIds = cms.VInputTag(
+                                        cms.InputTag("interestingEcalDetIdPFES"),
+                                        cms.InputTag("interestingEcalDetIdRefinedES"), 
                                       )
+)
 
 #selected digis
 from RecoEcal.EgammaClusterProducers.ecalDigiSelector_cff import *
 
 reducedEcalRecHitsSequence = cms.Sequence(interestingEcalDetIdEB*interestingEcalDetIdEBU*
                                           interestingEcalDetIdEE*
-                                          interestingEcalDetIdPFEB*interestingEcalDetIdPFEE*
-                                          interestingEcalDetIdRefinedEB*interestingEcalDetIdRefinedEE*
+                                          interestingEcalDetIdPFEB*interestingEcalDetIdPFEE*interestingEcalDetIdPFES*
+                                          interestingEcalDetIdRefinedEB*interestingEcalDetIdRefinedEE*interestingEcalDetIdRefinedES*
                                           interestingTrackEcalDetIds*
                                           reducedEcalRecHitsEB*
                                           reducedEcalRecHitsEE*
