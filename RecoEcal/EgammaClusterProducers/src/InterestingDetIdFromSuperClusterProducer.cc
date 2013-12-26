@@ -110,7 +110,7 @@ InterestingDetIdFromSuperClusterProducer::produce (edm::Event& iEvent,
       const CaloSubdetectorTopology* topology  = caloTopology_->getSubdetectorTopology(eMaxId.det(),eMaxId.subdetId());
 
       xtalsToStore=topology->getWindow(eMaxId,minimalEtaSize_,minimalPhiSize_);
-      std::vector<std::pair<DetId,float > > xtalsInClus=(*clusIt)->hitsAndFractions();
+      const std::vector<std::pair<DetId,float > > &xtalsInClus=(*clusIt)->hitsAndFractions();
       
       for (unsigned int ii=0;ii<xtalsInClus.size();ii++)
         {
