@@ -119,17 +119,19 @@ EcalRecHitProducer::produce(edm::Event& evt, const edm::EventSetup& es)
         if (ebUncalibRecHits)
         {
                 // loop over uncalibrated rechits to make calibrated ones
-                for(EBUncalibratedRecHitCollection::const_iterator it  = ebUncalibRecHits->begin(); it != ebUncalibRecHits->end(); ++it) {
-                        worker_->run(evt, *it, *ebRecHits);
-                }
+//                 for(EBUncalibratedRecHitCollection::const_iterator it  = ebUncalibRecHits->begin(); it != ebUncalibRecHits->end(); ++it) {
+//                         worker_->run(evt, *it, *ebRecHits);
+//                 }
+          worker_->run(evt,*ebUncalibRecHits,*ebRecHits);
         }
 
         if (eeUncalibRecHits)
         {
                 // loop over uncalibrated rechits to make calibrated ones
-                for(EEUncalibratedRecHitCollection::const_iterator it  = eeUncalibRecHits->begin(); it != eeUncalibRecHits->end(); ++it) {
-                        worker_->run(evt, *it, *eeRecHits);
-                }
+//                 for(EEUncalibratedRecHitCollection::const_iterator it  = eeUncalibRecHits->begin(); it != eeUncalibRecHits->end(); ++it) {
+//                         worker_->run(evt, *it, *eeRecHits);
+//                 }
+          worker_->run(evt,*eeUncalibRecHits,*eeRecHits);
         }
 
         // sort collections before attempting recovery, to avoid insertion of double recHits

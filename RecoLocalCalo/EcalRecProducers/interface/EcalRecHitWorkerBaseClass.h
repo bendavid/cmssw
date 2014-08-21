@@ -19,7 +19,12 @@ class EcalRecHitWorkerBaseClass {
                 virtual ~EcalRecHitWorkerBaseClass() {};
 
                 virtual void set(const edm::EventSetup& es) = 0;
-                virtual bool run(const edm::Event& evt, const EcalUncalibratedRecHit& uncalibRH, EcalRecHitCollection & result) = 0;
+                virtual bool run(const edm::Event& evt, const EcalUncalibratedRecHit& uncalibRH, EcalRecHitCollection & result) { return false; } 
+                virtual void run(const edm::Event& evt, const EcalUncalibratedRecHitCollection& uncalibRHs, EcalRecHitCollection & result) {
+                  for (const EcalUncalibratedRecHit &uncalibRH : uncalibRHs) {
+                    run(evt,uncalibRH,result);
+                  }
+                }
 };
 
 #endif

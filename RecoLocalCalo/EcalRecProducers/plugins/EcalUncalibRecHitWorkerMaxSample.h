@@ -4,6 +4,10 @@
 #include "RecoLocalCalo/EcalRecProducers/interface/EcalUncalibRecHitWorkerBaseClass.h"
 #include "RecoLocalCalo/EcalRecAlgos/interface/EcalUncalibRecHitMaxSampleAlgo.h"
 
+#include "FWCore/Framework/interface/ESHandle.h"
+#include "CondFormats/EcalObjects/interface/EcalPedestals.h"
+#include "CondFormats/EcalObjects/interface/EcalGainRatios.h"
+
 #include "DataFormats/EcalDigi/interface/EcalDigiCollections.h"
 #include "DataFormats/EcalRecHit/interface/EcalRecHitCollections.h"
 
@@ -27,7 +31,16 @@ class EcalUncalibRecHitWorkerMaxSample : public EcalUncalibRecHitWorkerBaseClass
                 //std::string ebHitCollection_; // secondary name to be given to collection of hits
                 //std::string eeHitCollection_; // secondary name to be given to collection of hits
 
+                edm::ESHandle<EcalPedestals> peds;
+                edm::ESHandle<EcalGainRatios>  gains;                
+                
                 EcalUncalibRecHitMaxSampleAlgo<EBDataFrame> ebAlgo_;
                 EcalUncalibRecHitMaxSampleAlgo<EEDataFrame> eeAlgo_;
+                
+                std::vector<double> weightseb;
+                std::vector<double> weightsee;
+                
+                std::vector<double> pulseeb;
+                std::vector<double> pulseee;
 };
 #endif

@@ -30,12 +30,16 @@ class EcalUncalibratedRecHit {
 
 
   float amplitude() const { return amplitude_; }
+  float amplitude(unsigned int isample) const { return amplitudes_[isample]; }
   float pedestal() const { return pedestal_; }
   float jitter() const { return jitter_; }
   float chi2() const { return chi2_; }
   float outOfTimeEnergy() const { return OOTamplitude_; }
   float outOfTimeChi2() const { return OOTchi2_; }
 
+  const std::vector<float> &amplitudes() const { return amplitudes_; }
+  void setAmplitudes(std::vector<float> &amplitudes) { amplitudes_ = amplitudes; }
+  
   uint32_t flags() const { return flags_; }
   float jitterError() const;
   uint8_t jitterErrorBits() const;
@@ -58,6 +62,12 @@ class EcalUncalibratedRecHit {
   bool isSaturated() const;
   bool isJitterValid() const;
   bool isJitterErrorValid() const;
+  
+  float pedrms() const { return pedrms_; }
+  int gain() const { return gain_; }
+  
+  void setPedrms(float pedrms) { pedrms_ = pedrms; }
+  void setGain(int gain) { gain_ = gain; }
 
  private:
   float amplitude_;    //< Reconstructed amplitude
@@ -69,6 +79,10 @@ class EcalUncalibratedRecHit {
   uint32_t flags_;     //< flag to be propagated to RecHit
   uint32_t aux_;       //< aux word; first 8 bits contain time (jitter) error
   DetId  id_;          //< Detector ID
+  
+  std::vector<float> amplitudes_;
+  float pedrms_;
+  int gain_;
 };
 
 #endif
