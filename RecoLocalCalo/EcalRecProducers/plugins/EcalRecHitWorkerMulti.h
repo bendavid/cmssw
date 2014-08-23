@@ -78,6 +78,7 @@ class EcalRecHitWorkerMulti : public EcalRecHitWorkerBaseClass {
 
         bool killDeadChannels_;
         bool laserCorrection_;
+        bool blindtagging_;
         
         EcalRecHitSimpleAlgo * rechitMaker_;
         
