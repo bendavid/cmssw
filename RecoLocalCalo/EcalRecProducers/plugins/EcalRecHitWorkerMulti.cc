@@ -28,11 +28,14 @@
 #include "TCanvas.h"
 #include "TFile.h"
 #include "TStyle.h"
+#include "Math/Factory.h"
+#include "Math/GSLMinimizer.h"
 
 EcalRecHitWorkerMulti::EcalRecHitWorkerMulti(const edm::ParameterSet&ps, edm::ConsumesCollector& c) :
   EcalRecHitWorkerBaseClass(ps,c), invsamplecorEBg12(10), invsamplecorEEg12(10),
   invsamplecorEBg6(10), invsamplecorEEg6(10),
-  invsamplecorEBg1(10), invsamplecorEEg1(10), sampleunitcov(10)
+  invsamplecorEBg1(10), invsamplecorEEg1(10), sampleunitcov(10),
+  fullpulseEB(12),fullpulseEE(12),fullpulsecovEB(12),fullpulsecovEE(12)
 {
     rechitMaker_ = new EcalRecHitSimpleAlgo();
         v_chstatus_ = ps.getParameter<std::vector<int> >("ChannelStatusToBeExcluded");
@@ -114,6 +117,323 @@ EcalRecHitWorkerMulti::EcalRecHitWorkerMulti(const edm::ParameterSet&ps, edm::Co
     
     hpulseprofEB = new TProfile("hpulseprofEB","",10,-0.5,9.5,"s");
     hpulseprofEE = new TProfile("hpulseprofEE","",10,-0.5,9.5,"s");
+        
+    fullpulseEB(0) = 1.123570e-02;
+    fullpulseEB(1) = 7.572697e-01;
+    fullpulseEB(2) = 1.000000e+00;
+    fullpulseEB(3) = 8.880847e-01;
+    fullpulseEB(4) = 6.739063e-01;
+    fullpulseEB(5) = 4.746290e-01;
+    fullpulseEB(6) = 3.198094e-01;
+    fullpulseEB(7) = 2.002313e-01;
+    fullpulseEB(8) = 1.240913e-01;
+    fullpulseEB(9) = 7.523601e-02;
+    fullpulseEB(10) = 4.482069e-02;
+    fullpulseEB(11) = 2.637229e-02;
+    fullpulseEE(0) = 1.155830e-01;
+    fullpulseEE(1) = 7.554980e-01;
+    fullpulseEE(2) = 1.000000e+00;
+    fullpulseEE(3) = 8.975266e-01;
+    fullpulseEE(4) = 6.872156e-01;
+    fullpulseEE(5) = 4.918896e-01;
+    fullpulseEE(6) = 3.444126e-01;
+    fullpulseEE(7) = 2.120742e-01;
+    fullpulseEE(8) = 1.318843e-01;
+    fullpulseEE(9) = 8.005721e-02;
+    fullpulseEE(10) = 4.765987e-02;
+    fullpulseEE(11) = 2.797843e-02;
+    fullpulsecovEB(0,0) = 3.089231e-06;
+    fullpulsecovEB(0,1) = 1.364223e-05;
+    fullpulsecovEB(0,2) = 0.000000e+00;
+    fullpulsecovEB(0,3) = -4.841374e-06;
+    fullpulsecovEB(0,4) = -5.016645e-06;
+    fullpulsecovEB(0,5) = -3.978544e-06;
+    fullpulsecovEB(0,6) = -2.954626e-06;
+    fullpulsecovEB(0,7) = 0.000000e+00;
+    fullpulsecovEB(0,8) = 0.000000e+00;
+    fullpulsecovEB(0,9) = 0.000000e+00;
+    fullpulsecovEB(0,10) = 0.000000e+00;
+    fullpulsecovEB(0,11) = 0.000000e+00;
+    fullpulsecovEB(1,0) = 1.364223e-05;
+    fullpulsecovEB(1,1) = 6.723361e-05;
+    fullpulsecovEB(1,2) = 0.000000e+00;
+    fullpulsecovEB(1,3) = -2.390276e-05;
+    fullpulsecovEB(1,4) = -2.487319e-05;
+    fullpulsecovEB(1,5) = -1.987776e-05;
+    fullpulsecovEB(1,6) = -1.482751e-05;
+    fullpulsecovEB(1,7) = 0.000000e+00;
+    fullpulsecovEB(1,8) = 0.000000e+00;
+    fullpulsecovEB(1,9) = 0.000000e+00;
+    fullpulsecovEB(1,10) = 0.000000e+00;
+    fullpulsecovEB(1,11) = 0.000000e+00;
+    fullpulsecovEB(2,0) = 0.000000e+00;
+    fullpulsecovEB(2,1) = 0.000000e+00;
+    //fullpulsecovEB(2,2) = 8.821379e-06;
+    fullpulsecovEB(2,3) = 0.000000e+00;
+    fullpulsecovEB(2,4) = 0.000000e+00;
+    fullpulsecovEB(2,5) = 0.000000e+00;
+    fullpulsecovEB(2,6) = 0.000000e+00;
+    fullpulsecovEB(2,7) = 0.000000e+00;
+    fullpulsecovEB(2,8) = 0.000000e+00;
+    fullpulsecovEB(2,9) = 0.000000e+00;
+    fullpulsecovEB(2,10) = 0.000000e+00;
+    fullpulsecovEB(2,11) = 0.000000e+00;
+    fullpulsecovEB(3,0) = -4.841374e-06;
+    fullpulsecovEB(3,1) = -2.390276e-05;
+    fullpulsecovEB(3,2) = 0.000000e+00;
+    fullpulsecovEB(3,3) = 8.821379e-06;
+    fullpulsecovEB(3,4) = 9.053254e-06;
+    fullpulsecovEB(3,5) = 7.222126e-06;
+    fullpulsecovEB(3,6) = 5.379169e-06;
+    fullpulsecovEB(3,7) = 0.000000e+00;
+    fullpulsecovEB(3,8) = 0.000000e+00;
+    fullpulsecovEB(3,9) = 0.000000e+00;
+    fullpulsecovEB(3,10) = 0.000000e+00;
+    fullpulsecovEB(3,11) = 0.000000e+00;
+    fullpulsecovEB(4,0) = -5.016645e-06;
+    fullpulsecovEB(4,1) = -2.487319e-05;
+    fullpulsecovEB(4,2) = 0.000000e+00;
+    fullpulsecovEB(4,3) = 9.053254e-06;
+    fullpulsecovEB(4,4) = 9.555901e-06;
+    fullpulsecovEB(4,5) = 7.581942e-06;
+    fullpulsecovEB(4,6) = 5.657722e-06;
+    fullpulsecovEB(4,7) = 0.000000e+00;
+    fullpulsecovEB(4,8) = 0.000000e+00;
+    fullpulsecovEB(4,9) = 0.000000e+00;
+    fullpulsecovEB(4,10) = 0.000000e+00;
+    fullpulsecovEB(4,11) = 0.000000e+00;
+    fullpulsecovEB(5,0) = -3.978544e-06;
+    fullpulsecovEB(5,1) = -1.987776e-05;
+    fullpulsecovEB(5,2) = 0.000000e+00;
+    fullpulsecovEB(5,3) = 7.222126e-06;
+    fullpulsecovEB(5,4) = 7.581942e-06;
+    fullpulsecovEB(5,5) = 6.252068e-06;
+    fullpulsecovEB(5,6) = 4.612691e-06;
+    fullpulsecovEB(5,7) = 0.000000e+00;
+    fullpulsecovEB(5,8) = 0.000000e+00;
+    fullpulsecovEB(5,9) = 0.000000e+00;
+    fullpulsecovEB(5,10) = 0.000000e+00;
+    fullpulsecovEB(5,11) = 0.000000e+00;
+    fullpulsecovEB(6,0) = -2.954626e-06;
+    fullpulsecovEB(6,1) = -1.482751e-05;
+    fullpulsecovEB(6,2) = 0.000000e+00;
+    fullpulsecovEB(6,3) = 5.379169e-06;
+    fullpulsecovEB(6,4) = 5.657722e-06;
+    fullpulsecovEB(6,5) = 4.612691e-06;
+    fullpulsecovEB(6,6) = 3.627807e-06;
+    fullpulsecovEB(6,7) = 0.000000e+00;
+    fullpulsecovEB(6,8) = 0.000000e+00;
+    fullpulsecovEB(6,9) = 0.000000e+00;
+    fullpulsecovEB(6,10) = 0.000000e+00;
+    fullpulsecovEB(6,11) = 0.000000e+00;
+    fullpulsecovEB(7,0) = 0.000000e+00;
+    fullpulsecovEB(7,1) = 0.000000e+00;
+    fullpulsecovEB(7,2) = 0.000000e+00;
+    fullpulsecovEB(7,3) = 0.000000e+00;
+    fullpulsecovEB(7,4) = 0.000000e+00;
+    fullpulsecovEB(7,5) = 0.000000e+00;
+    fullpulsecovEB(7,6) = 0.000000e+00;
+    fullpulsecovEB(7,7) = 3.627807e-06;
+    fullpulsecovEB(7,8) = 0.000000e+00;
+    fullpulsecovEB(7,9) = 0.000000e+00;
+    fullpulsecovEB(7,10) = 0.000000e+00;
+    fullpulsecovEB(7,11) = 0.000000e+00;
+    fullpulsecovEB(8,0) = 0.000000e+00;
+    fullpulsecovEB(8,1) = 0.000000e+00;
+    fullpulsecovEB(8,2) = 0.000000e+00;
+    fullpulsecovEB(8,3) = 0.000000e+00;
+    fullpulsecovEB(8,4) = 0.000000e+00;
+    fullpulsecovEB(8,5) = 0.000000e+00;
+    fullpulsecovEB(8,6) = 0.000000e+00;
+    fullpulsecovEB(8,7) = 0.000000e+00;
+    fullpulsecovEB(8,8) = 3.627807e-06;
+    fullpulsecovEB(8,9) = 0.000000e+00;
+    fullpulsecovEB(8,10) = 0.000000e+00;
+    fullpulsecovEB(8,11) = 0.000000e+00;
+    fullpulsecovEB(9,0) = 0.000000e+00;
+    fullpulsecovEB(9,1) = 0.000000e+00;
+    fullpulsecovEB(9,2) = 0.000000e+00;
+    fullpulsecovEB(9,3) = 0.000000e+00;
+    fullpulsecovEB(9,4) = 0.000000e+00;
+    fullpulsecovEB(9,5) = 0.000000e+00;
+    fullpulsecovEB(9,6) = 0.000000e+00;
+    fullpulsecovEB(9,7) = 0.000000e+00;
+    fullpulsecovEB(9,8) = 0.000000e+00;
+    fullpulsecovEB(9,9) = 3.627807e-06;
+    fullpulsecovEB(9,10) = 0.000000e+00;
+    fullpulsecovEB(9,11) = 0.000000e+00;
+    fullpulsecovEB(10,0) = 0.000000e+00;
+    fullpulsecovEB(10,1) = 0.000000e+00;
+    fullpulsecovEB(10,2) = 0.000000e+00;
+    fullpulsecovEB(10,3) = 0.000000e+00;
+    fullpulsecovEB(10,4) = 0.000000e+00;
+    fullpulsecovEB(10,5) = 0.000000e+00;
+    fullpulsecovEB(10,6) = 0.000000e+00;
+    fullpulsecovEB(10,7) = 0.000000e+00;
+    fullpulsecovEB(10,8) = 0.000000e+00;
+    fullpulsecovEB(10,9) = 0.000000e+00;
+    fullpulsecovEB(10,10) = 3.627807e-06;
+    fullpulsecovEB(10,11) = 0.000000e+00;
+    fullpulsecovEB(11,0) = 0.000000e+00;
+    fullpulsecovEB(11,1) = 0.000000e+00;
+    fullpulsecovEB(11,2) = 0.000000e+00;
+    fullpulsecovEB(11,3) = 0.000000e+00;
+    fullpulsecovEB(11,4) = 0.000000e+00;
+    fullpulsecovEB(11,5) = 0.000000e+00;
+    fullpulsecovEB(11,6) = 0.000000e+00;
+    fullpulsecovEB(11,7) = 0.000000e+00;
+    fullpulsecovEB(11,8) = 0.000000e+00;
+    fullpulsecovEB(11,9) = 0.000000e+00;
+    fullpulsecovEB(11,10) = 0.000000e+00;
+    fullpulsecovEB(11,11) = 3.627807e-06;
+    fullpulsecovEE(0,0) = 4.488648e-05;
+    fullpulsecovEE(0,1) = 3.855150e-05;
+    fullpulsecovEE(0,2) = 0.000000e+00;
+    fullpulsecovEE(0,3) = -1.716703e-05;
+    fullpulsecovEE(0,4) = -1.966737e-05;
+    fullpulsecovEE(0,5) = -1.729944e-05;
+    fullpulsecovEE(0,6) = -1.469454e-05;
+    fullpulsecovEE(0,7) = 0.000000e+00;
+    fullpulsecovEE(0,8) = 0.000000e+00;
+    fullpulsecovEE(0,9) = 0.000000e+00;
+    fullpulsecovEE(0,10) = 0.000000e+00;
+    fullpulsecovEE(0,11) = 0.000000e+00;
+    fullpulsecovEE(1,0) = 3.855150e-05;
+    fullpulsecovEE(1,1) = 3.373966e-05;
+    fullpulsecovEE(1,2) = 0.000000e+00;
+    fullpulsecovEE(1,3) = -1.497342e-05;
+    fullpulsecovEE(1,4) = -1.720638e-05;
+    fullpulsecovEE(1,5) = -1.522689e-05;
+    fullpulsecovEE(1,6) = -1.307713e-05;
+    fullpulsecovEE(1,7) = 0.000000e+00;
+    fullpulsecovEE(1,8) = 0.000000e+00;
+    fullpulsecovEE(1,9) = 0.000000e+00;
+    fullpulsecovEE(1,10) = 0.000000e+00;
+    fullpulsecovEE(1,11) = 0.000000e+00;
+    fullpulsecovEE(2,0) = 0.000000e+00;
+    fullpulsecovEE(2,1) = 0.000000e+00;
+    //fullpulsecovEE(2,2) = 7.317861e-06;
+    fullpulsecovEE(2,3) = 0.000000e+00;
+    fullpulsecovEE(2,4) = 0.000000e+00;
+    fullpulsecovEE(2,5) = 0.000000e+00;
+    fullpulsecovEE(2,6) = 0.000000e+00;
+    fullpulsecovEE(2,7) = 0.000000e+00;
+    fullpulsecovEE(2,8) = 0.000000e+00;
+    fullpulsecovEE(2,9) = 0.000000e+00;
+    fullpulsecovEE(2,10) = 0.000000e+00;
+    fullpulsecovEE(2,11) = 0.000000e+00;
+    fullpulsecovEE(3,0) = -1.716703e-05;
+    fullpulsecovEE(3,1) = -1.497342e-05;
+    fullpulsecovEE(3,2) = 0.000000e+00;
+    fullpulsecovEE(3,3) = 7.317861e-06;
+    fullpulsecovEE(3,4) = 8.272783e-06;
+    fullpulsecovEE(3,5) = 7.267976e-06;
+    fullpulsecovEE(3,6) = 6.225963e-06;
+    fullpulsecovEE(3,7) = 0.000000e+00;
+    fullpulsecovEE(3,8) = 0.000000e+00;
+    fullpulsecovEE(3,9) = 0.000000e+00;
+    fullpulsecovEE(3,10) = 0.000000e+00;
+    fullpulsecovEE(3,11) = 0.000000e+00;
+    fullpulsecovEE(4,0) = -1.966737e-05;
+    fullpulsecovEE(4,1) = -1.720638e-05;
+    fullpulsecovEE(4,2) = 0.000000e+00;
+    fullpulsecovEE(4,3) = 8.272783e-06;
+    fullpulsecovEE(4,4) = 9.960259e-06;
+    fullpulsecovEE(4,5) = 8.757415e-06;
+    fullpulsecovEE(4,6) = 7.487101e-06;
+    fullpulsecovEE(4,7) = 0.000000e+00;
+    fullpulsecovEE(4,8) = 0.000000e+00;
+    fullpulsecovEE(4,9) = 0.000000e+00;
+    fullpulsecovEE(4,10) = 0.000000e+00;
+    fullpulsecovEE(4,11) = 0.000000e+00;
+    fullpulsecovEE(5,0) = -1.729944e-05;
+    fullpulsecovEE(5,1) = -1.522689e-05;
+    fullpulsecovEE(5,2) = 0.000000e+00;
+    fullpulsecovEE(5,3) = 7.267976e-06;
+    fullpulsecovEE(5,4) = 8.757415e-06;
+    fullpulsecovEE(5,5) = 8.286420e-06;
+    fullpulsecovEE(5,6) = 7.079047e-06;
+    fullpulsecovEE(5,7) = 0.000000e+00;
+    fullpulsecovEE(5,8) = 0.000000e+00;
+    fullpulsecovEE(5,9) = 0.000000e+00;
+    fullpulsecovEE(5,10) = 0.000000e+00;
+    fullpulsecovEE(5,11) = 0.000000e+00;
+    fullpulsecovEE(6,0) = -1.469454e-05;
+    fullpulsecovEE(6,1) = -1.307713e-05;
+    fullpulsecovEE(6,2) = 0.000000e+00;
+    fullpulsecovEE(6,3) = 6.225963e-06;
+    fullpulsecovEE(6,4) = 7.487101e-06;
+    fullpulsecovEE(6,5) = 7.079047e-06;
+    fullpulsecovEE(6,6) = 6.623356e-06;
+    fullpulsecovEE(6,7) = 0.000000e+00;
+    fullpulsecovEE(6,8) = 0.000000e+00;
+    fullpulsecovEE(6,9) = 0.000000e+00;
+    fullpulsecovEE(6,10) = 0.000000e+00;
+    fullpulsecovEE(6,11) = 0.000000e+00;
+    fullpulsecovEE(7,0) = 0.000000e+00;
+    fullpulsecovEE(7,1) = 0.000000e+00;
+    fullpulsecovEE(7,2) = 0.000000e+00;
+    fullpulsecovEE(7,3) = 0.000000e+00;
+    fullpulsecovEE(7,4) = 0.000000e+00;
+    fullpulsecovEE(7,5) = 0.000000e+00;
+    fullpulsecovEE(7,6) = 0.000000e+00;
+    fullpulsecovEE(7,7) = 6.623356e-06;
+    fullpulsecovEE(7,8) = 0.000000e+00;
+    fullpulsecovEE(7,9) = 0.000000e+00;
+    fullpulsecovEE(7,10) = 0.000000e+00;
+    fullpulsecovEE(7,11) = 0.000000e+00;
+    fullpulsecovEE(8,0) = 0.000000e+00;
+    fullpulsecovEE(8,1) = 0.000000e+00;
+    fullpulsecovEE(8,2) = 0.000000e+00;
+    fullpulsecovEE(8,3) = 0.000000e+00;
+    fullpulsecovEE(8,4) = 0.000000e+00;
+    fullpulsecovEE(8,5) = 0.000000e+00;
+    fullpulsecovEE(8,6) = 0.000000e+00;
+    fullpulsecovEE(8,7) = 0.000000e+00;
+    fullpulsecovEE(8,8) = 6.623356e-06;
+    fullpulsecovEE(8,9) = 0.000000e+00;
+    fullpulsecovEE(8,10) = 0.000000e+00;
+    fullpulsecovEE(8,11) = 0.000000e+00;
+    fullpulsecovEE(9,0) = 0.000000e+00;
+    fullpulsecovEE(9,1) = 0.000000e+00;
+    fullpulsecovEE(9,2) = 0.000000e+00;
+    fullpulsecovEE(9,3) = 0.000000e+00;
+    fullpulsecovEE(9,4) = 0.000000e+00;
+    fullpulsecovEE(9,5) = 0.000000e+00;
+    fullpulsecovEE(9,6) = 0.000000e+00;
+    fullpulsecovEE(9,7) = 0.000000e+00;
+    fullpulsecovEE(9,8) = 0.000000e+00;
+    fullpulsecovEE(9,9) = 6.623356e-06;
+    fullpulsecovEE(9,10) = 0.000000e+00;
+    fullpulsecovEE(9,11) = 0.000000e+00;
+    fullpulsecovEE(10,0) = 0.000000e+00;
+    fullpulsecovEE(10,1) = 0.000000e+00;
+    fullpulsecovEE(10,2) = 0.000000e+00;
+    fullpulsecovEE(10,3) = 0.000000e+00;
+    fullpulsecovEE(10,4) = 0.000000e+00;
+    fullpulsecovEE(10,5) = 0.000000e+00;
+    fullpulsecovEE(10,6) = 0.000000e+00;
+    fullpulsecovEE(10,7) = 0.000000e+00;
+    fullpulsecovEE(10,8) = 0.000000e+00;
+    fullpulsecovEE(10,9) = 0.000000e+00;
+    fullpulsecovEE(10,10) = 6.623356e-06;
+    fullpulsecovEE(10,11) = 0.000000e+00;
+    fullpulsecovEE(11,0) = 0.000000e+00;
+    fullpulsecovEE(11,1) = 0.000000e+00;
+    fullpulsecovEE(11,2) = 0.000000e+00;
+    fullpulsecovEE(11,3) = 0.000000e+00;
+    fullpulsecovEE(11,4) = 0.000000e+00;
+    fullpulsecovEE(11,5) = 0.000000e+00;
+    fullpulsecovEE(11,6) = 0.000000e+00;
+    fullpulsecovEE(11,7) = 0.000000e+00;
+    fullpulsecovEE(11,8) = 0.000000e+00;
+    fullpulsecovEE(11,9) = 0.000000e+00;
+    fullpulsecovEE(11,10) = 0.000000e+00;
+    fullpulsecovEE(11,11) = 6.623356e-06;
+
+
+
+    
     
 }
 
@@ -278,15 +598,21 @@ EcalRecHitWorkerMulti::run( const edm::Event & evt,
       
       bool fillpulse = detid==globalmax;
       
+//       for (double pulseval : calibpulse) {
+//         sumpulse += pulseval;
+//       }
+      
+      unsigned int nsample = 10;
+      
       double sumpulse = 0.;
-      for (double pulseval : calibpulse) {
-        sumpulse += pulseval;
+      for (unsigned int isample=3; isample<nsample; ++isample) {
+        sumpulse += calibpulse[isample];
       }
       //fillpulse = false;
       fillpulse = barrel ? calibpulse[5]>50. : calibpulse[5]>100.;
       //fillpulse = calibpulse[5]>5. && calibpulse[5]<15.;
       
-      fillpulse = false;
+      //fillpulse = false;
       
       if (fillpulse) {
         //double pulseweight = sumpulse/pedrms/pedrms;
@@ -314,20 +640,20 @@ EcalRecHitWorkerMulti::run( const edm::Event & evt,
         const TMatrixDSym &theinvsamplecor = invsamplecor(barrel,uncalibRH.gain());
         TMatrixDSym invsamplecov = (1./(pedrms*pedrms))*theinvsamplecor;        
         
-        PulseChiSqTime pulsefunc(calibpulse,invsamplecov,alphav,betav,tmaxv,inparamcov);
-
-        ROOT::Minuit2::Minuit2Minimizer minim;
-        minim.SetPrintLevel(2);
-        minim.SetStrategy(2);
-        //if (doprint) minim.SetPrintLevel(9);
-        minim.SetFunction(pulsefunc);
-        
-        minim.SetLowerLimitedVariable(0,"amp",calibpulse[5],0.001,0.);
-        minim.SetLimitedVariable(1,"alpha",alpha,0.001,1.,3.);
-        minim.SetLimitedVariable(2,"beta",beta,0.001,1.,3.);
-        minim.SetLimitedVariable(3,"tmax",5.,0.001,4.8,5.2);
-        
-        minim.Minimize();
+//         PulseChiSqTime pulsefunc(calibpulse,invsamplecov,alphav,betav,tmaxv,inparamcov);
+// 
+//         ROOT::Minuit2::Minuit2Minimizer minim;
+//         minim.SetPrintLevel(2);
+//         minim.SetStrategy(2);
+//         //if (doprint) minim.SetPrintLevel(9);
+//         minim.SetFunction(pulsefunc);
+//         
+//         minim.SetLowerLimitedVariable(0,"amp",calibpulse[5],0.001,0.);
+//         minim.SetLimitedVariable(1,"alpha",alpha,0.001,1.,3.);
+//         minim.SetLimitedVariable(2,"beta",beta,0.001,1.,3.);
+//         minim.SetLimitedVariable(3,"tmax",5.,0.001,4.8,5.2);
+//         
+//         minim.Minimize();
         
         
       }      
@@ -828,6 +1154,7 @@ EcalRecHitWorkerMulti::run( const edm::Event & evt,
         activeBX.insert(2);
         activeBX.insert(3);
         activeBX.insert(4);
+        //activeBX.insert(0);
       }
       else {
         activeBX.insert(0);
@@ -835,12 +1162,13 @@ EcalRecHitWorkerMulti::run( const edm::Event & evt,
        
       bool doprint = activeBX.size()>1;         
       doprint = false;   
+      //doprint = true;   
       
       const double alpha = barrel ? 1.36745 : 1.59918;
       const double beta = barrel ? 1.51341 : 1.46568;      
       const double tmax = barrel ? 5.04159 : 5.09323;      
       
-      const unsigned int npulse = activeBX.size() ;
+      unsigned int npulse = activeBX.size() ;
       const unsigned int nsample = calibpulse.size();
       
       TMatrixD pulsemat(nsample,npulse);
@@ -860,52 +1188,16 @@ EcalRecHitWorkerMulti::run( const edm::Event & evt,
       
       //double shapeerr = 1e-2;
       
-      TMatrixDSym invsamplecov = pedrms*pedrms*invsamplecor(barrel,uncalibRH.gain());
-      for (unsigned int isample = 0; isample<nsample; ++isample) {
-        invsamplecov(isample,isample) += pow(shapeerr*calibpulse[isample],2);
-      }
-      std::vector<double> caliberr(nsample);
-      for (unsigned int isample=0; isample<nsample; ++isample) {
-        caliberr[isample] = sqrt(invsamplecov(isample,isample));
-      }      
-      invsamplecov.Invert();
-      PulseChiSq pulsefunc(calibpulse,pulsemat,invsamplecov);
+//       TMatrixDSym invsamplecov = pedrms*pedrms*invsamplecor(barrel,uncalibRH.gain());
+//       for (unsigned int isample = 0; isample<nsample; ++isample) {
+//         invsamplecov(isample,isample) += pow(shapeerr*calibpulse[isample],2);
+//       }
+//       std::vector<double> caliberr(nsample);
+//       for (unsigned int isample=0; isample<nsample; ++isample) {
+//         caliberr[isample] = sqrt(invsamplecov(isample,isample));
+//       }      
+//       invsamplecov.Invert();
       
-      ROOT::Minuit2::Minuit2Minimizer minim;
-      //minim.SetStrategy(2);
-      //if (doprint) minim.SetPrintLevel(9);
-      minim.SetFunction(pulsefunc);
-      
-      for (std::set<int>::const_iterator pulsebx = activeBX.begin(); pulsebx!=activeBX.end(); ++pulsebx) {
-        int ipulse = std::distance(activeBX.begin(),pulsebx);
-        minim.SetLowerLimitedVariable(ipulse,pulsenames[ipulse],calibpulse[*pulsebx+5],0.001,0.);
-      }
-      
-      std::vector<bool> floating(activeBX.size(),true);
-      int nfloating = activeBX.size();
-      while (!status) {        
-        status = minim.Minimize();
-        
-        if (!status && nfloating==1) break;
-        
-        double minval = std::numeric_limits<double>::max();
-        int ipulsemin = 0;
-        if (!status) {
-          for (std::set<int>::const_iterator pulsebx = activeBX.begin(); pulsebx!=activeBX.end(); ++pulsebx) {
-            int ipulse = std::distance(activeBX.begin(),pulsebx);
-            if (!floating[ipulse]) continue;
-            double pulseval = calibpulse[*pulsebx+5];
-            if (pulseval<minval) {
-              minval = pulseval;
-              ipulsemin = ipulse;
-            }
-            minim.SetVariableValue(ipulse,pulseval);
-          }
-          minim.SetFixedVariable(ipulsemin,pulsenames[ipulsemin],0.);
-          floating[ipulsemin] = false;
-          --nfloating;
-        }
-      }
       
       double maxpulseval = -std::numeric_limits<double>::max();
       for (unsigned int isample = 0; isample<nsample; ++isample) {
@@ -913,14 +1205,142 @@ EcalRecHitWorkerMulti::run( const edm::Event & evt,
           maxpulseval = calibpulse[isample];
         }
       }
+      doprint &= maxpulseval > 5.;
+      
+      //if (!doprint) continue;
+      
+      TMatrixDSym invsamplecov = pedrms*pedrms*invsamplecor(barrel,uncalibRH.gain());
+      std::vector<double> caliberr(nsample);
+      for (unsigned int isample=0; isample<nsample; ++isample) {
+        caliberr[isample] = sqrt(invsamplecov(isample,isample));
+      }      
+      //invsamplecov.Invert();      
+      
+//       PulseChiSq pulsefunc(calibpulse,pulsemat,invsamplecov);
+//       
+//       ROOT::Minuit2::Minuit2Minimizer minim;
+//       //minim.SetStrategy(2);
+//       //if (doprint) minim.SetPrintLevel(9);
+//       minim.SetFunction(pulsefunc);
+      
+      
+      const TVectorD &fullpulse = barrel ? fullpulseEB : fullpulseEE;
+      const TMatrixDSym &fullpulsecov = barrel ? fullpulsecovEB : fullpulsecovEE;
+      
+
+      //minim.SetFunction(pulsefunc);
+      //status = minim.Minimize();
+      
+      //std::vector<bool> floating(activeBX.size(),true);
+      //int nfloating = activeBX.size();
+      
+      std::vector<double> fitvals;
+      std::vector<double> fiterrs;
+      double chisq = 0.;
+      
+      while (!status) {        
+        
+        
+        
+        ROOT::Minuit2::Minuit2Minimizer minim;
+        //if (doprint) minim.SetPrintLevel(9);
+        minim.SetStrategy(0);
+        //PulseChiSqTemplate pulsefunc(calibpulse,invsamplecov,activeBX,fullpulse,fullpulsecov,minim);
+        //PulseChiSqTemplateFast pulsefunc(calibpulse,invsamplecov,activeBX,fullpulse,fullpulsecov,minim);
+        PulseChiSqFast pulsefunc(calibpulse,invsamplecov,activeBX,fullpulse,fullpulsecov,minim);                
+        
+        const int maxiter = 50;
+        int iter = 0;
+        while (true) {
+          status = minim.Minimize();
+          if (!status) break;
+          
+          if (iter>=maxiter) break;
+          
+          double chisqnow = minim.MinValue();
+          double deltachisq = chisqnow-chisq;
+          if (deltachisq<=0. && deltachisq>-1e-3) {
+            break;
+          }
+          ++iter;
+          chisq = chisqnow;
+          pulsefunc.updateCov(minim.X(),invsamplecov,activeBX,fullpulsecov);
+        }
+         
+        double minval = std::numeric_limits<double>::max();
+        //int ipulsemin = 0;
+        int bxmin = 0;
+        if (status) {
+          chisq = minim.MinValue();
+          fitvals.resize(activeBX.size());
+          fiterrs.resize(activeBX.size());
+          for (unsigned int ipulse=0; ipulse<activeBX.size(); ++ipulse) {
+            fitvals[ipulse] = minim.X()[ipulse];
+            fiterrs[ipulse] = minim.Errors()[ipulse];
+          }
+        }
+        else {
+          if (activeBX.size()==1) break;
+          for (std::set<int>::const_iterator pulsebx = activeBX.begin(); pulsebx!=activeBX.end(); ++pulsebx) {
+//             int ipulse = std::distance(activeBX.begin(),pulsebx);
+            //if (!floating[ipulse]) continue;
+            double pulseval = calibpulse[*pulsebx+5];
+            if (pulseval<minval) {
+              minval = pulseval;
+              bxmin = *pulsebx;
+            }
+            //minim.SetVariableValue(ipulse,pulseval);
+          }
+          activeBX.erase(activeBX.find(bxmin));
+          //minim.SetFixedVariable(ipulsemin,pulsenames[ipulsemin],0.);
+          //floating[ipulsemin] = false;
+          //--nfloating;
+        }        
+        
+      }
+      
+      npulse = activeBX.size();
+      
+//       for (std::set<int>::const_iterator pulsebx = activeBX.begin(); pulsebx!=activeBX.end(); ++pulsebx) {
+//         int ipulse = std::distance(activeBX.begin(),pulsebx);
+//         minim.SetLowerLimitedVariable(ipulse,pulsenames[ipulse],calibpulse[*pulsebx+5],0.001,0.);
+//       }
+//       
+//       std::vector<bool> floating(activeBX.size(),true);
+//       int nfloating = activeBX.size();
+//       while (!status) {        
+//         status = minim.Minimize();
+//         
+//         if (!status && nfloating==1) break;
+//         
+//         double minval = std::numeric_limits<double>::max();
+//         int ipulsemin = 0;
+//         if (!status) {
+//           for (std::set<int>::const_iterator pulsebx = activeBX.begin(); pulsebx!=activeBX.end(); ++pulsebx) {
+//             int ipulse = std::distance(activeBX.begin(),pulsebx);
+//             if (!floating[ipulse]) continue;
+//             double pulseval = calibpulse[*pulsebx+5];
+//             if (pulseval<minval) {
+//               minval = pulseval;
+//               ipulsemin = ipulse;
+//             }
+//             minim.SetVariableValue(ipulse,pulseval);
+//           }
+//           minim.SetFixedVariable(ipulsemin,pulsenames[ipulsemin],0.);
+//           floating[ipulsemin] = false;
+//           --nfloating;
+//         }
+//       }
+      
+
       
       double maxpulsevaloot = -std::numeric_limits<double>::max();
       int maxbxoot = 0;
       for (std::set<int>::const_iterator pulsebx = activeBX.begin(); pulsebx!=activeBX.end(); ++pulsebx) {
         if ( (*pulsebx)==0 ) continue;
         int ipulse = std::distance(activeBX.begin(),pulsebx);      
-        if (minim.X()[ipulse]>maxpulsevaloot) {
-          maxpulsevaloot = minim.X()[ipulse];
+        if (fitvals[ipulse]>maxpulsevaloot) {
+          maxpulsevaloot = fitvals[ipulse];
           maxbxoot = *pulsebx;
         }        
       }
@@ -931,18 +1351,18 @@ EcalRecHitWorkerMulti::run( const edm::Event & evt,
       }      
          
       
-      const double chisq = minim.MinValue();
+      //const double chisq = minim.MinValue();
          
     
          
       //make rechit from in time pulse
       int ipulseintime = std::distance(activeBX.begin(),activeBX.find(0));
-      double energy = minim.X()[ipulseintime];
+      double energy = fitvals[ipulseintime];
       //double energy = 0.;
       double time = 0.;      
             
-      
-      doprint &= (barrel && energy>1.) || (!barrel && energy>5.);
+
+      //doprint &= (barrel && energy>1.) || (!barrel && energy>5.);
       
       gStyle->SetErrorX(0.);
       gStyle->SetOptStat(0.);
@@ -970,7 +1390,7 @@ EcalRecHitWorkerMulti::run( const edm::Event & evt,
         printf("chisq = %5f\n", chisq);
         for (std::set<int>::const_iterator pulsebx = activeBX.begin(); pulsebx!=activeBX.end(); ++pulsebx) {
           int ipulse = std::distance(activeBX.begin(),pulsebx);
-          printf("ipulse = %i, bx = %i, energy = %5f +- %5f, sig = %5f\n",ipulse,*pulsebx,minim.X()[ipulse],minim.Errors()[ipulse],minim.X()[ipulse]/minim.Errors()[ipulse]);
+          printf("ipulse = %i, bx = %i, energy = %5f +- %5f, sig = %5f\n",ipulse,*pulsebx,fitvals[ipulse],fiterrs[ipulse],fitvals[ipulse]/fiterrs[ipulse]);
         }
         
         bool dodraw = true;
@@ -991,8 +1411,8 @@ EcalRecHitWorkerMulti::run( const edm::Event & evt,
               double pulseval = pulsemat(isample,ipulse);
 //               hpulse->Fill(isample,fitvals[ipulse]*pulsemat(isample,ipulse));
 //               hfullpulse->Fill(isample,fitvals[ipulse]*pulsemat(isample,ipulse));
-              hpulse->Fill(isample,minim.X()[ipulse]*pulseval);
-              hfullpulse->Fill(isample,minim.X()[ipulse]*pulseval);              
+              hpulse->Fill(isample,fitvals[ipulse]*pulseval);
+              hfullpulse->Fill(isample,fitvals[ipulse]*pulseval);              
             }
             hists.push_back(hpulse);
           }
@@ -1115,6 +1535,77 @@ EcalRecHitWorkerMulti::~EcalRecHitWorkerMulti(){
   hpulseEE->Write();
   hpulseprofEB->Write();
   hpulseprofEE->Write();
+  
+  const unsigned int nsample = 10;
+  
+  {
+  
+    TMatrixDSym sumx0x1(nsample);
+    TMatrixDSym sumx0sumx1(nsample);
+    TVectorD sumx0(nsample);
+    
+    PulseChiSqGlobal &pulseglobal = pulseglobalEB;
+    
+    unsigned int npulse = pulseglobal.samples().size();
+    for (unsigned int ipulse=0; ipulse<npulse; ++ipulse) {
+      double pulseval = pulseglobal.samples()[ipulse][5];  
+      //double sumpulse = 0.;
+//       for (unsigned int isample=3; isample<nsample; ++isample) {
+//         sumpulse += pulseglobal.samples()[ipulse][isample];
+//       }
+      for (unsigned int isample=0; isample<nsample; ++isample) {
+        sumx0(isample) += pulseglobal.samples()[ipulse][isample]/pulseval/double(npulse);
+        for (unsigned int jsample=0; jsample<nsample; ++jsample) {
+          sumx0x1(isample,jsample) += pulseglobal.samples()[ipulse][isample]*pulseglobal.samples()[ipulse][jsample]/pulseval/pulseval/double(npulse);
+        }
+      }
+    }
+    
+    for (unsigned int isample=0; isample<nsample; ++isample) {
+      for (unsigned int jsample=0; jsample<nsample; ++jsample) {
+        sumx0sumx1(isample,jsample) = sumx0(isample)*sumx0(jsample);
+      }
+    }
+      
+    TMatrixDSym pulsecov = sumx0x1 - sumx0sumx1;
+    pulsecov.Write("pulsecovEB");
+
+  }
+  
+  {
+  
+    TMatrixDSym sumx0x1(nsample);
+    TMatrixDSym sumx0sumx1(nsample);
+    TVectorD sumx0(nsample);
+    
+    PulseChiSqGlobal &pulseglobal = pulseglobalEE;
+    
+    unsigned int npulse = pulseglobal.samples().size();
+    for (unsigned int ipulse=0; ipulse<npulse; ++ipulse) {
+      double pulseval = pulseglobal.samples()[ipulse][5];  
+/*      double sumpulse = 0.;
+      for (unsigned int isample=3; isample<nsample; ++isample) {
+        sumpulse += pulseglobal.samples()[ipulse][isample];
+      } */     
+      for (unsigned int isample=0; isample<nsample; ++isample) {
+        sumx0(isample) += pulseglobal.samples()[ipulse][isample]/pulseval/double(npulse);
+        for (unsigned int jsample=0; jsample<nsample; ++jsample) {
+          sumx0x1(isample,jsample) += pulseglobal.samples()[ipulse][isample]*pulseglobal.samples()[ipulse][jsample]/pulseval/pulseval/double(npulse);
+        }
+      }
+    }
+    
+    for (unsigned int isample=0; isample<nsample; ++isample) {
+      for (unsigned int jsample=0; jsample<nsample; ++jsample) {
+        sumx0sumx1(isample,jsample) = sumx0(isample)*sumx0(jsample);
+      }
+    }
+      
+    TMatrixDSym pulsecov = sumx0x1 - sumx0sumx1;
+    pulsecov.Write("pulsecovEE");
+
+  }  
+  
   fpulse->Close();
   
   delete rechitMaker_;
@@ -1274,6 +1765,299 @@ double EcalRecHitWorkerMulti::PulseChiSq::DoEval(const double *invals) const {
   return _invsamplecov.Similarity(_workvec);
   
   //return _workvec.Norm2Sqr();
+  
+}
+
+EcalRecHitWorkerMulti::PulseChiSqFast::PulseChiSqFast(const std::vector<double> &samples, const TMatrixDSym &samplecov, const std::set<int> &bxs, const TVectorD &fullpulse, const TMatrixDSym &fullpulsecov, ROOT::Math::Minimizer &minim) :
+  _sampvec(samples.size(),samples.data()),
+  _pulsemat(samples.size(),bxs.size()),
+  _invcov(samplecov),
+  _ampvec(bxs.size()),
+  _workvec(samples.size())
+{
+ 
+  _invcov.Invert();
+  
+  const unsigned int nsample = _sampvec.GetNrows();
+  
+  for (std::set<int>::const_iterator bxit = bxs.begin(); bxit!=bxs.end(); ++bxit) {
+    int ipulse = std::distance(bxs.begin(),bxit);
+    //int bx = *bxit;
+    minim.SetLowerLimitedVariable(ipulse,TString::Format("amp_%i",ipulse).Data(),0.,0.001,0.);
+  }
+  
+  for (std::set<int>::const_iterator bxit = bxs.begin(); bxit!=bxs.end(); ++bxit) {
+    int ipulse = std::distance(bxs.begin(),bxit);
+    int bx = *bxit;
+    int firstsamplet = std::max(0,bx + 3);
+    int offset = -3-bx;
+        
+    for (unsigned int isample = firstsamplet; isample<nsample; ++isample) {
+      _pulsemat(isample,ipulse) = fullpulse(isample+offset);
+    }
+  }
+  
+  minim.SetFunction(*this);
+  
+}  
+
+
+void EcalRecHitWorkerMulti::PulseChiSqFast::updateCov(const double *invals, const TMatrixDSym &samplecov, const std::set<int> &bxs, const TMatrixDSym &fullpulsecov) {
+ 
+  const unsigned int nsample = _sampvec.GetNrows();
+  
+  _invcov = samplecov;
+  
+  for (std::set<int>::const_iterator bxit = bxs.begin(); bxit!=bxs.end(); ++bxit) {
+    int ipulse = std::distance(bxs.begin(),bxit);
+    int bx = *bxit;
+    int firstsamplet = std::max(0,bx + 3);
+    int offset = -3-bx;
+        
+    double ampsq = invals[ipulse]*invals[ipulse];
+    for (unsigned int isample = firstsamplet; isample<nsample; ++isample) {
+      for (unsigned int jsample = firstsamplet; jsample<nsample; ++jsample) {
+        _invcov(isample,jsample) += ampsq*fullpulsecov(isample+offset,jsample+offset);
+      }
+    }
+  }
+  _invcov.Invert();
+  
+}
+
+double EcalRecHitWorkerMulti::PulseChiSqFast::DoEval(const double *invals) const {
+  
+  _ampvec.SetElements(invals);
+  _workvec = _sampvec - _pulsemat*_ampvec;
+  return _invcov.Similarity(_workvec);
+  
+}
+
+EcalRecHitWorkerMulti::PulseChiSqTemplate::PulseChiSqTemplate(const std::vector<double> &samples, const TMatrixDSym &invsamplecov, const std::set<int> &bxs, const TVectorD &fullpulse, const TMatrixDSym &fullpulsecov, ROOT::Math::Minimizer &minim) :
+  _sampvec(samples.size(),samples.data()),
+  _pulsemat(samples.size(),bxs.size()),
+  _invsamplecov(invsamplecov),
+  _ampvec(bxs.size()),
+  _workvec(samples.size()),
+  _bxs(bxs)
+{
+ 
+  
+  
+  const unsigned int nsample = _sampvec.GetNrows();
+  //const unsigned int npulse = _bxs.size();
+  
+  int nvar=0;
+  for (std::set<int>::const_iterator bxit = _bxs.begin(); bxit!=_bxs.end(); ++bxit) {
+    int ipulse = std::distance(_bxs.begin(),bxit);
+    int bx = *bxit;
+    minim.SetLowerLimitedVariable(nvar,TString::Format("amp_%i",ipulse).Data(),_sampvec[bx+5],0.001,0.);
+    ++nvar;
+  }
+  
+  for (std::set<int>::const_iterator bxit = _bxs.begin(); bxit!=_bxs.end(); ++bxit) {
+    int ipulse = std::distance(_bxs.begin(),bxit);
+    int bx = *bxit;
+    int firstsamplet = std::max(0,bx + 3);
+    //int lastsamplet = nsample-1;
+    
+    const unsigned int nsamplet = nsample - firstsamplet;
+    int beginidx = firstsamplet - (bx+3);
+    //int endidx = firstidx + nsamplet - 1;
+    
+    _templateworkvecs.emplace_back(nsamplet);
+    _templatevecs.emplace_back(nsamplet);
+    _invtemplatecovs.emplace_back(nsamplet);
+    
+    //TVectorD &templatworkvec = _templateworkvecs.back();
+    TVectorD &templatevec = _templatevecs.back();
+    TMatrixDSym &invtemplatecov = _invtemplatecovs.back();
+    
+    
+    for (unsigned int localidx=0; localidx<nsamplet; ++localidx) {
+      templatevec(localidx) = fullpulse(localidx+beginidx);
+      //if ( (localidx+beginidx)==2 || bx!=0) {
+      if ( (localidx+beginidx)==2 ) {
+        minim.SetFixedVariable(nvar,TString::Format("template_%i_%i",ipulse,localidx).Data(),templatevec(localidx));
+      }
+      else {
+        minim.SetVariable(nvar,TString::Format("template_%i_%i",ipulse,localidx).Data(),templatevec(localidx),0.001);
+        //minim.SetLimitedVariable(nvar,TString::Format("template_%i_%i",ipulse,localidx).Data(),templatevec(localidx),0.001,0.,1.);
+      }
+      ++nvar;
+      for (unsigned int localjdx=0; localjdx<nsamplet; ++localjdx) {
+        invtemplatecov(localidx,localjdx) = fullpulsecov(localidx+beginidx, localjdx+beginidx);
+      }
+    }
+    invtemplatecov.Invert();
+//     TDecompBK decomp(invtemplatecov);
+//     decomp.Invert(invtemplatecov);
+
+    
+    
+    if (0) {
+      printf("ipulse = %i\n",ipulse);
+      printf("pre-invert:\n");
+      for (unsigned int i=0; i<nsamplet; ++i) {
+        for (unsigned int j=0; j<nsamplet; ++j) {
+          printf("%5e ",invtemplatecov(i,j));
+        }
+        printf("\n");
+      }
+      
+      printf("\n");
+      
+//       bool status = false;
+//       TDecompBK decomp(invtemplatecov);
+//       invtemplatecov = decomp.Invert(status);
+      //decomp.Invert(invtemplatecov);
+      
+      //invtemplatecov *= 1e6;
+      
+      double invdet;
+      invtemplatecov.Invert(&invdet);
+      
+      //invtemplatecov *= 1e6;
+      
+      //printf("invert status = %i\n",int(status));
+      printf("invert det = %5e\n",invdet);
+      printf("post-invert:\n");
+      for (unsigned int i=0; i<nsamplet; ++i) {
+        for (unsigned int j=0; j<nsamplet; ++j) {
+          printf("%5e ",invtemplatecov(i,j));
+        }
+        printf("\n");
+      }    
+    }
+    
+  }
+  
+  _nvars = nvar;
+  
+  minim.SetFunction(*this);
+  
+}
+  
+  
+double EcalRecHitWorkerMulti::PulseChiSqTemplate::DoEval(const double *invals) const {
+
+  double chisq = 0.;
+
+  
+  const unsigned int nsample = _sampvec.GetNrows();
+  const unsigned int npulse = _bxs.size();
+  int ivar = 0;
+  for (unsigned int ipulse=0; ipulse<npulse; ++ipulse) {
+    _ampvec(ipulse) = invals[ivar];
+    ++ivar;
+  }
+  
+  for (std::set<int>::const_iterator bxit = _bxs.begin(); bxit!=_bxs.end(); ++bxit) {
+    int ipulse = std::distance(_bxs.begin(),bxit);
+    int bx = *bxit;
+    int firstsamplet = std::max(0,bx + 3);
+    //int lastsamplet = nsample-1;
+    
+    const unsigned int nsamplet = nsample - firstsamplet;
+    
+    TVectorD &templateworkvec = _templateworkvecs[ipulse];
+    const TVectorD &templatevec = _templatevecs[ipulse];
+    const TMatrixDSym &invtemplatecov = _invtemplatecovs[ipulse];
+    
+    for (unsigned int localidx=0; localidx<nsamplet; ++localidx) {   
+      templateworkvec(localidx) = invals[ivar];
+      ++ivar;
+      
+      _pulsemat(firstsamplet+localidx,ipulse) = templateworkvec(localidx);
+    }
+    
+    //if (bx!=0) continue;
+    
+    templateworkvec -= templatevec;
+    double pulsechisq = invtemplatecov.Similarity(templateworkvec);
+    //printf("ipulse = %i, pulsechisq = %5f\n",ipulse,pulsechisq);
+    chisq += pulsechisq;
+  }
+  
+  _workvec = _pulsemat*_ampvec - _sampvec;
+  double samplechisq = _invsamplecov.Similarity(_workvec);
+  //printf("samplechisq = %5f\n",samplechisq);
+  chisq += samplechisq;
+  
+  return chisq;
+  
+}  
+  
+  
+EcalRecHitWorkerMulti::PulseChiSqTemplateFast::PulseChiSqTemplateFast(const std::vector<double> &samples, const TMatrixDSym &samplecov, const std::set<int> &bxs, const TVectorD &fullpulse, const TMatrixDSym &fullpulsecov, ROOT::Math::Minimizer &minim) :
+  _sampvec(samples.size(),samples.data()),
+  _pulsemat(samples.size(),bxs.size()),
+  _samplecov(samplecov),
+  _ampvec(bxs.size()),
+  _workvec(samples.size()),
+  _invcov(samples.size()),
+  _decomp(samples.size()),
+  _workmat(samples.size(),samples.size())
+{
+ 
+  
+  
+  const unsigned int nsample = _sampvec.GetNrows();
+  
+  for (std::set<int>::const_iterator bxit = bxs.begin(); bxit!=bxs.end(); ++bxit) {
+    int ipulse = std::distance(bxs.begin(),bxit);
+    int bx = *bxit;
+    minim.SetLowerLimitedVariable(ipulse,TString::Format("amp_%i",ipulse).Data(),_sampvec[bx+5],0.001,0.);
+  }
+  
+  for (std::set<int>::const_iterator bxit = bxs.begin(); bxit!=bxs.end(); ++bxit) {
+    int ipulse = std::distance(bxs.begin(),bxit);
+    int bx = *bxit;
+    int firstsamplet = std::max(0,bx + 3);
+    int offset = -3-bx;
+    
+    _templatecovs.emplace_back(nsample);    
+    TMatrixDSym &templatecov = _templatecovs.back();
+    
+    for (unsigned int isample = firstsamplet; isample<nsample; ++isample) {
+      _pulsemat(isample,ipulse) = fullpulse(isample+offset);
+      for (unsigned int jsample = firstsamplet; jsample<nsample; ++jsample) {
+        templatecov(isample,jsample) = fullpulsecov(isample+offset,jsample+offset);
+      }
+    }
+
+  }
+  
+  minim.SetFunction(*this);
+  
+}  
+
+
+double EcalRecHitWorkerMulti::PulseChiSqTemplateFast::DoEval(const double *invals) const {
+  
+  const unsigned int npulse = _ampvec.GetNrows();
+  
+  _ampvec.SetElements(invals);
+  
+  _invcov = _samplecov;
+  for (unsigned int ipulse=0; ipulse<npulse; ++ipulse) {
+    _invcov += _ampvec(ipulse)*_ampvec(ipulse)*_templatecovs[ipulse];
+  }
+  //_invcov.Invert();
+  
+  //TDecompChol decomp(_invcov);
+  _decomp.SetMatrix(_invcov);
+  _decomp.Decompose();
+  _workmat = _decomp.GetU();
+  _workmat.Invert();
+  
+  _workvec = _sampvec - _pulsemat*_ampvec;
+  _workvec *= _workmat;
+  return _workvec.Norm2Sqr();
+  
+  //_workvec = _sampvec - _pulsemat*_ampvec;
+  //return 1./_invcov.Similarity(_workvec);
+  
   
 }
 

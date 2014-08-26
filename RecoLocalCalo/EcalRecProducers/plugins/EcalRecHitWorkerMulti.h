@@ -30,6 +30,9 @@
 #include "TVectorD.h"
 #include "TMatrixDSym.h"
 #include "Math/IFunction.h"
+#include "Math/Minimizer.h"
+#include "Minuit2/Minuit2Minimizer.h"
+#include "TDecompChol.h"
 
 #include "TH1D.h"
 #include "TProfile.h"
@@ -97,6 +100,10 @@ class EcalRecHitWorkerMulti : public EcalRecHitWorkerBaseClass {
         TProfile *hpulseprofEB;
         TProfile *hpulseprofEE;
         
+        TVectorD fullpulseEB;
+        TVectorD fullpulseEE;
+        TMatrixDSym fullpulsecovEB;
+        TMatrixDSym fullpulsecovEE;
 
         
         class PulseChiSq : public ROOT::Math::IBaseFunctionMultiDim {
@@ -115,6 +122,25 @@ class EcalRecHitWorkerMulti : public EcalRecHitWorkerBaseClass {
             double DoEval(const double *invals) const;
         };
         
+        class PulseChiSqFast : public ROOT::Math::IBaseFunctionMultiDim {
+          public:
+            PulseChiSqFast(const std::vector<double> &samples, const TMatrixDSym &samplecov, const std::set<int> &bxs, const TVectorD &fullpulse, const TMatrixDSym &fullpulsecov, ROOT::Math::Minimizer &minim);
+            unsigned int NDim() const { return _pulsemat.GetNcols(); }
+            IBaseFunctionMultiDim *Clone() const { return new PulseChiSqFast(*this); }
+            
+            void updateCov(const double *invals, const TMatrixDSym &samplecov, const std::set<int> &bxs, const TMatrixDSym &fullpulsecov);
+            
+          protected:
+            TVectorD _sampvec;
+            TMatrixD _pulsemat;
+            TMatrixDSym _invcov;
+            mutable TVectorD _ampvec;
+            mutable TVectorD _workvec;
+            
+          private:
+            double DoEval(const double *invals) const;
+        };        
+        
         class PulseChiSqTime : public ROOT::Math::IBaseFunctionMultiDim {
           public:
             PulseChiSqTime(const std::vector<double> &samples, const TMatrixDSym &invsamplecov, const std::vector<double> &alphanom, const std::vector<double> &betanom, const std::vector<double> &tmaxnom, const TMatrixDSym &invparamcov);
@@ -130,6 +156,51 @@ class EcalRecHitWorkerMulti : public EcalRecHitWorkerBaseClass {
             std::vector<double> _betanom;
             std::vector<double> _tmaxnom;
             TMatrixDSym _invparamcov;
+            
+          private:
+            double DoEval(const double *invals) const;
+        };     
+        
+        class PulseChiSqTemplate : public ROOT::Math::IBaseFunctionMultiDim {
+          public:
+            PulseChiSqTemplate(const std::vector<double> &samples, const TMatrixDSym &invsamplecov, const std::set<int> &bxs, const TVectorD &fullpulse, const TMatrixDSym &fullpulsecov, ROOT::Math::Minimizer &minim);
+            unsigned int NDim() const { return _nvars; }
+            IBaseFunctionMultiDim *Clone() const { return new PulseChiSqTemplate(*this); }
+            
+          //protected:
+            TVectorD _sampvec;
+            mutable TMatrixD _pulsemat;
+            TMatrixDSym _invsamplecov;
+            mutable TVectorD _ampvec;
+            mutable TVectorD _workvec;
+            std::set<int> _bxs;
+            mutable std::vector<TVectorD> _templateworkvecs;
+            std::vector<TVectorD> _templatevecs;
+            std::vector<TMatrixDSym> _invtemplatecovs;
+            unsigned int _nvars;
+            
+          private:
+            double DoEval(const double *invals) const;
+        };  
+        
+        class PulseChiSqTemplateFast : public ROOT::Math::IBaseFunctionMultiDim {
+          public:
+            PulseChiSqTemplateFast(const std::vector<double> &samples, const TMatrixDSym &samplecov, const std::set<int> &bxs, const TVectorD &fullpulse, const TMatrixDSym &fullpulsecov, ROOT::Math::Minimizer &minim);
+            unsigned int NDim() const { return _ampvec.GetNrows(); }
+            IBaseFunctionMultiDim *Clone() const { return new PulseChiSqTemplateFast(*this); }
+            
+          //protected:
+            TVectorD _sampvec;
+            TMatrixD _pulsemat;
+            TMatrixDSym _samplecov;
+            mutable TVectorD _ampvec;
+            mutable TVectorD _workvec;
+            //std::set<int> _bxs;
+            std::vector<TMatrixDSym> _templatecovs;
+            mutable TMatrixDSym _invcov;
+            mutable TDecompChol _decomp;
+            mutable TMatrixD _workmat;
+            //unsigned int _nvars;
             
           private:
             double DoEval(const double *invals) const;
