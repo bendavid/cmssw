@@ -43,6 +43,8 @@ EcalRecHitWorkerMulti::EcalRecHitWorkerMulti(const edm::ParameterSet&ps, edm::Co
         killDeadChannels_ = ps.getParameter<bool>("killDeadChannels");
         laserCorrection_ = ps.getParameter<bool>("laserCorrection");
         blindtagging_ = ps.getParameter<bool>("blindtagging");
+        dotagging_ = ps.getParameter<bool>("dotagging");
+        minsigtag_ = ps.getParameter<double>("minsigtag");
 	EBLaserMIN_ = ps.getParameter<double>("EBLaserMIN");
 	EELaserMIN_ = ps.getParameter<double>("EELaserMIN");
 	EBLaserMAX_ = ps.getParameter<double>("EBLaserMAX");
@@ -460,7 +462,7 @@ EcalRecHitWorkerMulti::run( const edm::Event & evt,
 {
   
   
-    const double shapeerr = 5e-2;
+//    const double shapeerr = 5e-2;
   //const double shapeerr = 0.;
   
     std::vector<const EcalUncalibratedRecHit*> outuncalib;
@@ -691,6 +693,7 @@ EcalRecHitWorkerMulti::run( const edm::Event & evt,
     for (const EcalUncalibratedRecHit *uncalibRHp : outuncalib) {
       //continue;
       if (blindtagging_) continue;
+      if (!dotagging_) continue;
       const EcalUncalibratedRecHit &uncalibRH = *uncalibRHp;
       DetId detid=uncalibRH.id();
       
@@ -699,14 +702,14 @@ EcalRecHitWorkerMulti::run( const edm::Event & evt,
       const std::vector<double> &calibpulse = calibpulses[detid];
       //std::set<int> &activeBX = activeBXs[detid];
       //const std::set<int> &activeBX = activeAll;
-      std::set<int> activeBX;
+      std::set<int> activeBX(activeAll);
       std::set<int> &activeBXfinal = activeBXs[detid];
       
       double pedrms = pedrmss[detid];
       
-      const double alpha = barrel ? 1.36745 : 1.59918;
+/*      const double alpha = barrel ? 1.36745 : 1.59918;
       const double beta = barrel ? 1.51341 : 1.46568;      
-      const double tmax = barrel ? 5.04159 : 5.09323;      
+      const double tmax = barrel ? 5.04159 : 5.09323;    */  
   
 //       const double alpha = barrel ? 1.3789 : 1.6836;
 //       const double beta = barrel ? 1.5006 : 1.4173;      
@@ -716,216 +719,80 @@ EcalRecHitWorkerMulti::run( const edm::Event & evt,
 
       const unsigned int nsample = calibpulse.size();
       
-      TVectorD sampvec(nsample,calibpulse.data());
-      
-      //double shapeerr = 1e-2;
+
+      bool status = false;
       
       TMatrixDSym invsamplecov = pedrms*pedrms*invsamplecor(barrel,uncalibRH.gain());
-      for (unsigned int isample = 0; isample<nsample; ++isample) {
-        invsamplecov(isample,isample) += pow(shapeerr*calibpulse[isample],2);
-      }
       std::vector<double> caliberr(nsample);
       for (unsigned int isample=0; isample<nsample; ++isample) {
         caliberr[isample] = sqrt(invsamplecov(isample,isample));
-      }
-      invsamplecov.Invert();      
-      
-      double chisq = invsamplecov.Similarity(sampvec);
+      }      
       
       
-      std::vector<double> calibpulsenow = calibpulse;
-      unsigned int npulse = 0;
-      //double chisq = 0.;
+      const TVectorD &fullpulse = barrel ? fullpulseEB : fullpulseEE;
+      const TMatrixDSym &fullpulsecov = barrel ? fullpulsecovEB : fullpulsecovEE;
+      
+
+      
       std::vector<double> fitvals;
       std::vector<double> fiterrs;
-      TMatrixD pulsemat;
-      while (true) {
-//         double maxsample = -std::numeric_limits<double>::max();
-//         std::set<int> maxsamples;
-//         for (unsigned int isample = 0; isample<nsample; ++isample) {
-//           int bx = int(isample)-5;
-//           bool localmax = !activeBX.count(bx) && !activeBX.count(bx-1) && !activeBX.count(bx+1);
-//           if (localmax && calibpulsenow[isample]>maxsample) {
-//             maxsample = calibpulsenow[isample];
-//           }
-//         }
-//         if (maxsample<0.) {
-//           break;
-//         }
-//         for (unsigned int isample = 0; isample<nsample; ++isample) {
-//           int bx = int(isample)-5;
-//           bool localmax = !activeBX.count(bx) && !activeBX.count(bx-1) && !activeBX.count(bx+1);
-//           if (!localmax) continue;
-//           if (calibpulsenow[isample]==maxsample || (isample>0 && calibpulsenow[isample-1]==maxsample) || (isample<(nsample-1) && calibpulsenow[isample+1]==maxsample) ) {
-//             maxsamples.insert(isample);
-//           }
-//         }
-//         
-//         if (!activeBX.count(0)) maxsamples.insert(5);
+      double chisq = 0.;
+//      unsigned int npulse = activeBX.size();
+      
+      while (!status) {        
+                
+        ROOT::Minuit2::Minuit2Minimizer minim;
+        minim.SetStrategy(0);
+        PulseChiSqFast pulsefunc(calibpulse,invsamplecov,activeBX,fullpulse,fullpulsecov,minim);                
         
-        std::vector<int> maxsamples;
-        std::map<int, double> chisqsamples;
-        
- 
-        
-        for (unsigned int isample = 0; isample<nsample; ++isample) {
-          int bx = int(isample)-5;        
-          if (!activeBX.count(bx)) {
-            maxsamples.push_back(bx);
+        const int maxiter = 50;
+        int iter = 0;
+        while (true) {
+          status = minim.Minimize();
+          if (!status) break;
+          
+          if (iter>=maxiter) break;
+          
+          double chisqnow = minim.MinValue();
+          double deltachisq = chisqnow-chisq;
+          if (deltachisq<=0. && deltachisq>-1e-3) {
+            break;
+          }
+          ++iter;
+          chisq = chisqnow;
+          pulsefunc.updateCov(minim.X(),invsamplecov,activeBX,fullpulsecov);
+        }
+         
+        double minval = std::numeric_limits<double>::max();
+        //int ipulsemin = 0;
+        int bxmin = 0;
+        if (status) {
+          minim.Hesse();
+          chisq = minim.MinValue();
+          fitvals.resize(activeBX.size());
+          fiterrs.resize(activeBX.size());
+          for (unsigned int ipulse=0; ipulse<activeBX.size(); ++ipulse) {
+            fitvals[ipulse] = minim.X()[ipulse];
+            fiterrs[ipulse] = minim.Errors()[ipulse];
           }
         }
-        
-        if (!maxsamples.size()) break;
-        
-        unsigned int npulsenow = activeBX.size() + 1;        
-        
-        std::vector<std::vector<double> > fitvalss(maxsamples.size(), std::vector<double>(npulsenow,0.));
-        std::vector<std::vector<double> > fiterrss(maxsamples.size(), std::vector<double>(npulsenow,0.));
-        std::vector<TMatrixD> pulsemats(maxsamples.size(), TMatrixD(nsample,npulsenow));                  
-        
-        
-//         double sigmax = 0.;
-//         int bxmax = 0;
-//         double chisqmax = 0.;
-     
-        //double chisqintime = 0.;
-        
-        //for (std::set<int>::const_iterator isamplemaxit : maxsamples) {
-        for (unsigned int isamp = 0; isamp<maxsamples.size(); ++isamp) {
-          //int isamplemax = maxsamples[isamp]
-          //printf("start fit attempt\n");
-          std::set<int> activeBXnow(activeBX);
-          int newbx = maxsamples[isamp];
-          activeBXnow.insert(newbx);
-          
-          TMatrixD &pulsemat = pulsemats[isamp];
-          for (std::set<int>::const_iterator pulsebx = activeBXnow.begin(); pulsebx!=activeBXnow.end(); ++pulsebx) {
-            int ipulse = std::distance(activeBXnow.begin(),pulsebx);
-            for (unsigned int isample=0; isample<nsample; ++isample) {
-              double t = double(isample);
-              double val = pulseShape(t,alpha,beta,tmax+double(*pulsebx));
-              pulsemat[isample][ipulse] = val;
+        else {
+          if (activeBX.size()==1) break;
+          for (std::set<int>::const_iterator pulsebx = activeBX.begin(); pulsebx!=activeBX.end(); ++pulsebx) {
+//             int ipulse = std::distance(activeBX.begin(),pulsebx);
+            //if (!floating[ipulse]) continue;
+            double pulseval = calibpulse[*pulsebx+5];
+            if (pulseval<minval) {
+              minval = pulseval;
+              bxmin = *pulsebx;
             }
           }
-          
-          
-          PulseChiSq pulsefunc(calibpulse,pulsemat,invsamplecov);
-          
-          ROOT::Minuit2::Minuit2Minimizer minim;
-          //minim.SetStrategy(2);
-          minim.SetFunction(pulsefunc);
-          
-          for (std::set<int>::const_iterator pulsebx = activeBXnow.begin(); pulsebx!=activeBXnow.end(); ++pulsebx) {
-            int ipulse = std::distance(activeBXnow.begin(),pulsebx);
-            minim.SetLowerLimitedVariable(ipulse,pulsenames[ipulse],calibpulsenow[*pulsebx+5],0.001,0.);
-          }
-                    
-          bool status = minim.Minimize();
-          if (!status) {
-            continue;
-          }
-          
-          const double chisqnow = minim.MinValue();
-
-          for (unsigned int ipulse=0; ipulse<npulsenow; ++ipulse) {          
-            fitvalss[isamp][ipulse] = minim.X()[ipulse];
-            fiterrss[isamp][ipulse] = minim.Errors()[ipulse];        
-          }
-          
-          chisqsamples[newbx] = chisqnow;
-          
-          //double sig = sqrt(std::max(0.,chisq-chisqnow));
-          //printf("chisq0 = %5f, chisqnow = %5f, sig = %5f\n",chisq0,chisqnow,sig);
-//           if (sig>sigmax) {
-//             sigmax = sig;
-//             bxmax = newbx;
-//             pulsematmax = pulsemat;
-//             chisqmax = chisqnow;
-//             for (unsigned int ipulse=0; ipulse<npulsenow; ++ipulse) {
-//               fitvalss[isamp][ipulse] = minim.X()[ipulse];
-//               fiterrss[isamp][ipulse] = minim.Errors()[ipulse];
-//             }
-//           }
-        }
-        
-        const double minsig = 5.;
-        const double minsigtime = 5.;
-        
-        bool significant = false;
-        
-        int isampmax = 0;
-        
-        //double minchisq = std::numeric_limits<double>::max();
-        double maxsig = 0.;
-        double maxsigminsigtime = std::numeric_limits<double>::max();
-        for (unsigned int isamp = 0; isamp<maxsamples.size(); ++isamp) {
-          int newbx = maxsamples[isamp];
-          
-          const auto &chisqpair = chisqsamples.find(newbx);
-          if (chisqpair==chisqsamples.end()) continue;
-          double chisqnow = chisqpair->second;
-          
-          double sig = sqrt(std::max(0.,chisq-chisqnow));
-          if (sig<minsig) continue;
-          
-          const auto &chisqpairleft = chisqsamples.find(newbx-1);
-          if (chisqpairleft!=chisqsamples.end()) {
-            double leftsig = sqrt(std::max(0.,chisqpairleft->second - chisqnow));
-            if (leftsig<minsigtime) continue;
-            if (leftsig<maxsigminsigtime) maxsigminsigtime = leftsig;
-          }
-          const auto &chisqpairright = chisqsamples.find(newbx+1);
-          if (chisqpairright!=chisqsamples.end()) {
-            double rightsig = sqrt(std::max(0.,chisqpairright->second - chisqnow));
-            if (rightsig<minsigtime) continue;
-            if (rightsig<maxsigminsigtime) maxsigminsigtime = rightsig;
-          }
-          
-          if (sig>maxsig) {
-            maxsig = sig;
-            isampmax = isamp;
-            significant = true;
-          }
-          
-          
-        }
-        
-        
-        
-        
-        //printf("sigmax = %5f\n",sigmax);
-        //bool significant = sigmax>5 || (activeBX.size()==0 && chisq>20.);
-        //bool significant = sigmax > 3. || (activeBX.size()==0 && sigmax>2.);
-        
-//         if (!activeBX.count(0) && bxmax != 0) {
-//           sigmax = sqrt(std::max(0.,chisqintime-chisqmax));
-//         }
-//         
-//         bool significant = sigmax > 5.;
-        
-        
-        if (!significant) break;
-        
-
-        
-        int bxmax = maxsamples[isampmax];
-        //if (bxmax!=0) printf("isampmax = %i, bxmax = %i, maxsig = %5f, maxsigminsigtime = %5f\n",int(isampmax),bxmax,maxsig,maxsigminsigtime);
-        activeBX.insert(bxmax);
-        npulse = activeBX.size();
-        chisq = chisqsamples[bxmax];
-        fitvals = fitvalss[isampmax];
-        fiterrs = fiterrss[isampmax];    
-        pulsemat.ResizeTo(nsample,npulse);
-        pulsemat = pulsemats[isampmax];
-        for (unsigned int isample=0; isample<nsample; ++isample) {
-          calibpulsenow[isample] = calibpulse[isample];
-          for (std::set<int>::const_iterator pulsebx = activeBX.begin(); pulsebx!=activeBX.end(); ++pulsebx) {
-            int ipulse = std::distance(activeBX.begin(),pulsebx);
-            calibpulsenow[isample] -= fitvals[ipulse]*pulsemat(isample,ipulse);
-          }
+          activeBX.erase(activeBX.find(bxmin));
         }
         
       }
+      
+     // npulse = activeBX.size();
       
       double maxpulseval = -std::numeric_limits<double>::max();
       for (unsigned int isample = 0; isample<nsample; ++isample) {
@@ -994,11 +861,11 @@ EcalRecHitWorkerMulti::run( const edm::Event & evt,
       
       for (std::set<int>::const_iterator pulsebx = activeBX.begin(); pulsebx!=activeBX.end(); ++pulsebx) {
         if ((*pulsebx)==0) continue;
-        //int ipulse = std::distance(activeBX.begin(),pulsebx);   
-        //double pulsesig = fitvals[ipulse]/fiterrs[ipulse];
+        int ipulse = std::distance(activeBX.begin(),pulsebx);   
+        double pulsesig = fitvals[ipulse]/fiterrs[ipulse];
         //bool maxpulse = ( (ipulse==0 || fitvals[ipulse]>fitvals[ipulse-1]) && ( ipulse==(int(npulse)-1) || fitvals[ipulse]>fitvals[ipulse+1]) );
         //if (pulsesig>10. || ipulse==0 || (*pulsebx)==maxfitbx) {
-        if (true) {
+        if (pulsesig>minsigtag_) {
           //doprint = fitvals[5]>5.;
           //doprint = true;
           activeBXfinal.insert(*pulsebx);
@@ -1053,66 +920,6 @@ EcalRecHitWorkerMulti::run( const edm::Event & evt,
           int ipulse = std::distance(activeBX.begin(),pulsebx);
           printf("ipulse = %i, bx = %i, energy = %5f +- %5f, sig = %5f\n",ipulse,*pulsebx,fitvals[ipulse],fiterrs[ipulse],fitvals[ipulse]/fiterrs[ipulse]);
           //printf("ipulse = %i, bx = %i, energy = %5f +- %5f, sig = %5f, tmax = %5f +- %5f\n",ipulse,*pulsebx,fitvals[ipulse],fiterrs[ipulse],fitvals[ipulse]/fiterrs[ipulse],minim.X()[1+2*ipulse],minim.Errors()[1+2*ipulse]);
-        }   
-        
-/*        for (std::set<int>::const_iterator pulsebx = activeBX.begin(); pulsebx!=activeBX.end(); ++pulsebx) {
-          int ipulse = std::distance(activeBX.begin(),pulsebx);
-          if (fitvals[ipulse]/fiterrs[ipulse]<0.1) continue;
-          for (std::set<int>::const_iterator jpulsebx = activeBX.begin(); jpulsebx!=activeBX.end(); ++jpulsebx) {
-            int jpulse = std::distance(activeBX.begin(),jpulsebx);
-            if (jpulse==ipulse) {
-              minim.SetFixedVariable(jpulse,pulsenames[jpulse],0.);
-            }
-            else {
-              minim.SetLowerLimitedVariable(jpulse,pulsenames[jpulse],fitvals[jpulse],0.001,0.);
-            }
-          }
-          minim.Minimize();
-          double chisqalt = minim.MinValue();
-          double sigalt = sqrt(chisqalt-chisq);
-
-          printf("ipulse = %i, sigalt = %5f\n",ipulse,sigalt);
-        }*/        
-        
-        bool dodraw = true;
-        dodraw = false;
-        if (dodraw) {
-          TCanvas *c = new TCanvas;
-          TH1D *hsamples = new TH1D("hsamples","",10,-0.5,9.5);
-          TH1D *hfullpulse = new TH1D("hfullpulse","",10,-0.5,9.5);
-          std::vector<TH1D*> hists;
-          for (unsigned int ipulse=0; ipulse<npulse; ++ipulse) {
-            TH1D *hpulse = new TH1D(TString::Format("hpulse_%i",ipulse),"",10,-0.5,9.5);
-            hpulse->SetLineColor(ipulse+1);
-            for (unsigned int isample=0; isample<nsample; ++isample) {
-              //double pulseval = pulseShape(double(isample),alpha, beta,tmaxv[ipulse]);
-              double pulseval = pulsemat(isample,ipulse);
-//               hpulse->Fill(isample,fitvals[ipulse]*pulsemat(isample,ipulse));
-//               hfullpulse->Fill(isample,fitvals[ipulse]*pulsemat(isample,ipulse));
-              hpulse->Fill(isample,fitvals[ipulse]*pulseval);
-              hfullpulse->Fill(isample,fitvals[ipulse]*pulseval);              
-            }
-            hists.push_back(hpulse);
-          }
-          for (unsigned int isample=0; isample<nsample; ++isample) {
-            hsamples->Fill(isample,calibpulse[isample]);
-            //hsamples->SetBinError(hsamples->FindFixBin(isample),pedrms);
-            hsamples->SetBinError(hsamples->FindFixBin(isample),caliberr[isample]);
-          }
-          
-          hfullpulse->Draw("HIST");
-          for (unsigned int ipulse=0; ipulse<npulse; ++ipulse) {
-            hists[ipulse]->Draw("HISTSAME");
-          }
-          hsamples->Draw("ESAME");
-          c->SaveAs(TString::Format("pulse_%i_%5f.eps",int(barrel),ootsig));
-          delete c;
-          delete hsamples;
-          delete hfullpulse;
-          for (unsigned int ipulse=0; ipulse<npulse; ++ipulse) {
-            delete hists[ipulse];
-          }
-          //return;
         }        
 
       }       
@@ -1162,25 +969,25 @@ EcalRecHitWorkerMulti::run( const edm::Event & evt,
        
       bool doprint = activeBX.size()>1;         
       doprint = false;   
-      //doprint = true;   
+      doprint = true;   
       
-      const double alpha = barrel ? 1.36745 : 1.59918;
+/*      const double alpha = barrel ? 1.36745 : 1.59918;
       const double beta = barrel ? 1.51341 : 1.46568;      
-      const double tmax = barrel ? 5.04159 : 5.09323;      
+      const double tmax = barrel ? 5.04159 : 5.09323;   */   
       
       unsigned int npulse = activeBX.size() ;
       const unsigned int nsample = calibpulse.size();
       
-      TMatrixD pulsemat(nsample,npulse);
+//       TMatrixD pulsemat(nsample,npulse);
             
-      for (std::set<int>::const_iterator pulsebx = activeBX.begin(); pulsebx!=activeBX.end(); ++pulsebx) {
-        int ipulse = std::distance(activeBX.begin(),pulsebx);
-        for (unsigned int isample=0; isample<nsample; ++isample) {
-          double t = double(isample);
-          double val = pulseShape(t,alpha,beta,tmax + double(*pulsebx));
-          pulsemat[isample][ipulse] = val;
-        }
-      }
+//       for (std::set<int>::const_iterator pulsebx = activeBX.begin(); pulsebx!=activeBX.end(); ++pulsebx) {
+//         int ipulse = std::distance(activeBX.begin(),pulsebx);
+//         for (unsigned int isample=0; isample<nsample; ++isample) {
+//           double t = double(isample);
+//           double val = pulseShape(t,alpha,beta,tmax + double(*pulsebx));
+//           pulsemat[isample][ipulse] = val;
+//         }
+//       }
       
       double pedrms = pedrmss[detid];      
 
@@ -1205,7 +1012,7 @@ EcalRecHitWorkerMulti::run( const edm::Event & evt,
           maxpulseval = calibpulse[isample];
         }
       }
-      doprint &= maxpulseval > 5.;
+      doprint &= barrel ? maxpulseval > 1. : maxpulseval > 5.;
       
       //if (!doprint) continue;
       
@@ -1237,6 +1044,9 @@ EcalRecHitWorkerMulti::run( const edm::Event & evt,
       std::vector<double> fitvals;
       std::vector<double> fiterrs;
       double chisq = 0.;
+      
+      TMatrixDSym fullinvcov(nsample);
+      TMatrixD pulsemat(nsample,npulse);
       
       while (!status) {        
         
@@ -1278,6 +1088,9 @@ EcalRecHitWorkerMulti::run( const edm::Event & evt,
             fitvals[ipulse] = minim.X()[ipulse];
             fiterrs[ipulse] = minim.Errors()[ipulse];
           }
+          pulsemat.ResizeTo(pulsefunc.pulsemat());
+          pulsemat = pulsefunc.pulsemat();
+          fullinvcov = pulsefunc.invcov();
         }
         else {
           if (activeBX.size()==1) break;
@@ -1396,6 +1209,8 @@ EcalRecHitWorkerMulti::run( const edm::Event & evt,
         bool dodraw = true;
         //dodraw = false;
         if (dodraw) {
+          fullinvcov.Invert();
+          
           TCanvas *c = new TCanvas;
           TH1D *hsamples = new TH1D("hsamples","",10,-0.5,9.5);
           TH1D *hfullpulse = new TH1D("hfullpulse","",10,-0.5,9.5);
@@ -1425,14 +1240,26 @@ EcalRecHitWorkerMulti::run( const edm::Event & evt,
             }
             hsamples->Fill(isample,calibpulse[isample]);
             //hsamples->SetBinError(hsamples->FindFixBin(isample),pedrms);
-            hsamples->SetBinError(hsamples->FindFixBin(isample),caliberr[isample]);
+            //hfullpulse->SetBinError(hfullpulse->FindFixBin(isample),sqrt(std::max(0.,fullinvcov(isample,isample) - pedrms*pedrms)));
+            //hsamples->SetBinError(hsamples->FindFixBin(isample),sqrt(invsamplecov(isample,isample)));
+            hsamples->SetBinError(hsamples->FindFixBin(isample),sqrt(fullinvcov(isample,isample)));
           }
           double plotmin = std::min(0.,minsample-2.*minsampleerr);
           hfullpulse->SetLineWidth(2);
           hfullpulse->SetMinimum(plotmin);
           hfullpulse->GetXaxis()->SetTitle("Sample");
           hfullpulse->GetYaxis()->SetTitle("Calibrated/Pedestal-Subtracted Energy (GeV)");
+//           hfullpulse->SetFillStyle(3144);
+//           hfullpulse->SetFillColor(4);
           hfullpulse->Draw("HIST");
+          //hfullpulse->Draw("E2");
+//           TH1D *hfullpulsecopy = new TH1D(*hfullpulse);
+//           hfullpulsecopy->SetFillColor(4);
+          //hfullpulsecopy->SetFillStyle(3144);
+//           hfullpulsecopy->SetFillStyle(1001);
+//           hfullpulsecopy->SetMarkerStyle(8);
+//           hfullpulsecopy->SetMarkerSize(1e-3);
+//           hfullpulsecopy->Draw("E2SAME");
           for (unsigned int ipulse=0; ipulse<npulse; ++ipulse) {
             hists[ipulse]->Draw("HISTSAME");
           }
@@ -1442,6 +1269,7 @@ EcalRecHitWorkerMulti::run( const edm::Event & evt,
           delete c;
           delete hsamples;
           delete hfullpulse;
+          //delete hfullpulsecopy;
           for (unsigned int ipulse=0; ipulse<npulse; ++ipulse) {
             delete hists[ipulse];
           }

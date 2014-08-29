@@ -82,6 +82,8 @@ class EcalRecHitWorkerMulti : public EcalRecHitWorkerBaseClass {
         bool killDeadChannels_;
         bool laserCorrection_;
         bool blindtagging_;
+        bool dotagging_;
+        double minsigtag_;
         
         EcalRecHitSimpleAlgo * rechitMaker_;
         
@@ -129,6 +131,9 @@ class EcalRecHitWorkerMulti : public EcalRecHitWorkerBaseClass {
             IBaseFunctionMultiDim *Clone() const { return new PulseChiSqFast(*this); }
             
             void updateCov(const double *invals, const TMatrixDSym &samplecov, const std::set<int> &bxs, const TMatrixDSym &fullpulsecov);
+            
+            const TMatrixD &pulsemat() const { return _pulsemat; }
+            const TMatrixDSym &invcov() const { return _invcov; }
             
           protected:
             TVectorD _sampvec;

@@ -17,6 +17,8 @@ ecalRecHit = cms.EDProducer("EcalRecHitProducer",
     #algo = cms.string("EcalRecHitWorkerSimple"),
     algo = cms.string("EcalRecHitWorkerMulti"),
     blindtagging = cms.bool(False),
+    dotagging = cms.bool(True),
+    minsigtag = cms.double(5.),
     # define maximal and minimal values for the laser corrections
     
     EBLaserMIN = cms.double(0.5),
