@@ -23,11 +23,28 @@ class EcalUncalibRecHitMultiFitAlgo
   
  public:
   
-  ~EcalUncalibRecHitMultiFitAlgo() { };
+  EcalUncalibRecHitMultiFitAlgo();
+  ~EcalUncalibRecHitMultiFitAlgo();
   EcalUncalibratedRecHit makeRecHit(const EcalDataFrame& dataFrame, const EcalPedestals::Item * aped, const EcalMGPAGainRatio * aGain, const TMatrixDSym &noisecor, const TVectorD &fullpulse, const TMatrixDSym &fullpulsecov, std::set<int> activeBX);
   
  private:
-   PulseChiSqSNNLS _pulsefunc;
+    PulseChiSqSNNLS _pulsefunc;
+   
+    
+    int npulseEB;
+    int npulseEE;
+    
+    TVectorD sumpulseEB;
+    TVectorD sumpulseEE;
+    
+    TMatrixDSym sumx0x1EB;
+    TMatrixDSym sumx0x1EE;
+    
+    TVectorD sumx0EB;
+    TVectorD sumx0EE;
+    
+    TMatrixDSym noisecovwsumEB;
+    TMatrixDSym noisecovwsumEE;
 
 };
 

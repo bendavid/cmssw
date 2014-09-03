@@ -4,7 +4,144 @@
 
 #include "CondFormats/EcalObjects/interface/EcalPedestals.h"
 #include "CondFormats/EcalObjects/interface/EcalGainRatios.h"
+#include "TFile.h"
 
+EcalUncalibRecHitMultiFitAlgo::EcalUncalibRecHitMultiFitAlgo() :
+  npulseEB(0),
+  npulseEE(0),
+  sumpulseEB(10),
+  sumpulseEE(10),
+  sumx0x1EB(10),
+  sumx0x1EE(10),
+  sumx0EB(10),
+  sumx0EE(10),
+  noisecovwsumEB(10),
+  noisecovwsumEE(10) {
+    
+  }
+
+EcalUncalibRecHitMultiFitAlgo::~EcalUncalibRecHitMultiFitAlgo() {
+  
+  TFile *fpulse = new TFile("fpulse.root","RECREATE");
+  
+  const unsigned int nsample = 10;
+  
+  {
+    bool barrel = true;
+
+    const int &npulse = barrel ? npulseEB : npulseEE;
+    const TVectorD &sumpulse = barrel ? sumpulseEB : sumpulseEE;
+    const TVectorD &sumx0 = barrel ? sumx0EB : sumx0EE;
+    const TMatrixDSym &sumx0x1 = barrel ? sumx0x1EB : sumx0x1EE;
+    TMatrixDSym &noisecovwsum = barrel ? noisecovwsumEB : noisecovwsumEE;
+    
+    sumpulse.Write("pulseEB");
+    
+    TVectorD npulsev(1);
+    npulsev[0] = double(npulse);
+    npulsev.Write("npulseEB");
+    sumx0.Write("sumx0EB");
+    sumx0x1.Write("sumx0x1EB");
+    noisecovwsum.Write("noisecovwsumEB");    
+  }
+
+  {
+    bool barrel = false;
+
+    const int &npulse = barrel ? npulseEB : npulseEE;
+    const TVectorD &sumpulse = barrel ? sumpulseEB : sumpulseEE;
+    const TVectorD &sumx0 = barrel ? sumx0EB : sumx0EE;
+    const TMatrixDSym &sumx0x1 = barrel ? sumx0x1EB : sumx0x1EE;
+    TMatrixDSym &noisecovwsum = barrel ? noisecovwsumEB : noisecovwsumEE;
+    
+    sumpulse.Write("pulseEE");
+    
+    TVectorD npulsev(1);
+    npulsev[0] = double(npulse);
+    npulsev.Write("npulseEE");
+    sumx0.Write("sumx0EE");
+    sumx0x1.Write("sumx0x1EE");
+    noisecovwsum.Write("noisecovwsumEE");    
+  }  
+  
+  
+  if (0)
+  {
+    bool barrel = true;
+
+    const int &npulse = barrel ? npulseEB : npulseEE;
+    const TVectorD &sumpulse = barrel ? sumpulseEB : sumpulseEE;
+    const TVectorD &sumx0 = barrel ? sumx0EB : sumx0EE;
+    const TMatrixDSym &sumx0x1 = barrel ? sumx0x1EB : sumx0x1EE;
+    TMatrixDSym &noisecovwsum = barrel ? noisecovwsumEB : noisecovwsumEE;
+    
+    TMatrixDSym sumx0sumx1(nsample);
+    
+    
+    for (unsigned int isample=0; isample<nsample; ++isample) {
+      for (unsigned int jsample=0; jsample<nsample; ++jsample) {
+        sumx0sumx1(isample,jsample) = sumx0(isample)*sumx0(jsample);
+      }
+    }
+      
+    double scale = 1./double(npulse);
+    TMatrixDSym pulsecov = scale*sumx0x1 - scale*scale*sumx0sumx1;
+    pulsecov.Write("pulsecovEB");
+    
+    noisecovwsum *= scale*scale;
+    noisecovwsum.Write("noisecovwsumEB");
+    
+    TMatrixDSym pulsecovcor = pulsecov - noisecovwsum;
+    pulsecovcor.Write("pulsecovcorEB");
+    
+    sumpulse.Write("pulseEB");
+    
+    printf("npulseEB = %i\n",npulse);
+
+  } 
+  
+  if (0)
+  {
+    bool barrel = false;
+
+    const int &npulse = barrel ? npulseEB : npulseEE;
+    const TVectorD &sumpulse = barrel ? sumpulseEB : sumpulseEE;
+    const TVectorD &sumx0 = barrel ? sumx0EB : sumx0EE;
+    const TMatrixDSym &sumx0x1 = barrel ? sumx0x1EB : sumx0x1EE;
+    TMatrixDSym &noisecovwsum = barrel ? noisecovwsumEB : noisecovwsumEE;
+    
+    TMatrixDSym sumx0sumx1(nsample);
+    
+    
+    for (unsigned int isample=0; isample<nsample; ++isample) {
+      for (unsigned int jsample=0; jsample<nsample; ++jsample) {
+        sumx0sumx1(isample,jsample) = sumx0(isample)*sumx0(jsample);
+      }
+    }
+      
+    double scale = 1./double(npulse);
+    TMatrixDSym pulsecov = scale*sumx0x1 - scale*scale*sumx0sumx1;
+    pulsecov.Write("pulsecovEE");
+    
+    noisecovwsum *= scale*scale;
+    noisecovwsum.Write("noisecovwsumEE");
+    
+    TMatrixDSym pulsecovcor = pulsecov - noisecovwsum;
+    pulsecovcor.Write("pulsecovcorEE");
+    
+    sumpulse.Write("pulseEE");
+    
+    printf("npulseEE = %i\n",npulse);
+
+  }  
+  
+  
+  fpulse->Close();
+  
+  
+}
+
+  
 /// compute rechits
 EcalUncalibratedRecHit EcalUncalibRecHitMultiFitAlgo::makeRecHit(const EcalDataFrame& dataFrame, const EcalPedestals::Item * aped, const EcalMGPAGainRatio * aGain, const TMatrixDSym &noisecor, const TVectorD &fullpulse, const TMatrixDSym &fullpulsecov, std::set<int> activeBX) {
 
@@ -63,9 +200,33 @@ EcalUncalibratedRecHit EcalUncalibRecHitMultiFitAlgo::makeRecHit(const EcalDataF
         
   }
     
-  
-  std::vector<double> fitvals;
-  std::vector<double> fiterrs;
+  if (1) {
+    if (maxamplitude/pedrms > 1000.) {
+    //if (maxamplitude/pedrms > 3.) {
+    //if (true) {
+      DetId detid(dataFrame.id());
+      bool barrel = detid.subdetId()==EcalBarrel;
+    
+      int &npulse = barrel ? npulseEB : npulseEE;
+      TVectorD &sumpulse = barrel ? sumpulseEB : sumpulseEE;
+      TVectorD &sumx0 = barrel ? sumx0EB : sumx0EE;
+      TMatrixDSym &sumx0x1 = barrel ? sumx0x1EB : sumx0x1EE;
+      TMatrixDSym &noisecovwsum = barrel ? noisecovwsumEB : noisecovwsumEE;
+      
+      double scale = 1./maxamplitude;
+      for (unsigned int isample=0; isample<nsample; ++isample) {
+        printf("isample = %i, amplitude = %5f\n",isample,amplitudes[isample]);
+        sumpulse[isample] += amplitudes[isample];
+        sumx0[isample] += scale*amplitudes[isample];
+        noisecovwsum += scale*scale*pedrms*pedrms*noisecor;
+        for (unsigned int jsample=0; jsample<nsample; ++jsample) {
+          sumx0x1(isample,jsample) += scale*scale*amplitudes[isample]*amplitudes[jsample];
+        }
+      }
+      ++npulse;
+    }
+    return EcalUncalibratedRecHit();
+  }
   
 
   bool status = _pulsefunc.DoFit(amplitudes,noisecor,pedrms,activeBX,fullpulse,fullpulsecov);
@@ -88,9 +249,9 @@ EcalUncalibratedRecHit EcalUncalibRecHitMultiFitAlgo::makeRecHit(const EcalDataF
   for (std::set<int>::const_iterator bxit = activeBX.begin(); bxit!=activeBX.end(); ++bxit) {
     int ipulse = std::distance(activeBX.begin(),bxit);
     if(*bxit==0) {
-      rh.setOutOfTimeAmplitude(*bxit,0.);
+      rh.setOutOfTimeAmplitude(*bxit + 5,0.);
     } else {
-      rh.setOutOfTimeAmplitude(*bxit, status ? _pulsefunc.X()[ipulse] : 0.);
+      rh.setOutOfTimeAmplitude(*bxit + 5, status ? _pulsefunc.X()[ipulse] : 0.);
     }
   }
 
