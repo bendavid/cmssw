@@ -1,5 +1,6 @@
 #include "GeneratorInterface/Core/interface/HepMCFilterDriver.h"
 #include "GeneratorInterface/Core/interface/GenericDauHepMCFilter.h"
+#include "GeneratorInterface/Core/interface/PromptLeptonEnrichmentHepMCFilter.h"
 
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 
@@ -20,6 +21,8 @@ HepMCFilterDriver::HepMCFilterDriver(const edm::ParameterSet& pset) :
   
   if (filterName=="GenericDauHepMCFilter") {
     filter_ = new GenericDauHepMCFilter(filterParameters);
+  } else if (filterName=="PromptLeptonEnrichmentHepMCFilter") {
+    filter_ = new PromptLeptonEnrichmentHepMCFilter(filterParameters);
   }
   else {
     edm::LogError("HepMCFilterDriver")<< "Invalid HepMCFilter name:" << filterName;
