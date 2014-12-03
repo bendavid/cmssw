@@ -1,7 +1,5 @@
 import FWCore.ParameterSet.Config as cms
 
-from RecoLocalCalo.EcalRecProducers.ecalPulseShapeParameters_cff import *
-
 ecalMultiFitUncalibRecHit = cms.EDProducer("EcalUncalibRecHitProducer",
     EBdigiCollection = cms.InputTag("ecalDigis","ebDigis"),
     EEdigiCollection = cms.InputTag("ecalDigis","eeDigis"),
@@ -9,7 +7,6 @@ ecalMultiFitUncalibRecHit = cms.EDProducer("EcalUncalibRecHitProducer",
     EEhitCollection = cms.string('EcalUncalibRecHitsEE'),
 
     # for multifit method
-    EcalPulseShapeParameters = cms.PSet( ecal_pulse_shape_parameters ),
     activeBXs = cms.vint32(-5,-4,-3,-2,-1,0,1,2,3,4),
     ampErrorCalculation = cms.bool(True),
     useLumiInfoRunHeader = cms.bool(True),
