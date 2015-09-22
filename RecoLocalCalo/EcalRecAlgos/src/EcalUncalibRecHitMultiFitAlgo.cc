@@ -5,6 +5,11 @@
 #include "CondFormats/EcalObjects/interface/EcalPedestals.h"
 #include "CondFormats/EcalObjects/interface/EcalGainRatios.h"
 
+#include "TROOT.h"
+#include "TH1D.h"
+#include "TCanvas.h"
+#include "TStyle.h"
+
 EcalUncalibRecHitMultiFitAlgo::EcalUncalibRecHitMultiFitAlgo() : 
   _computeErrors(true),
   _doPrefit(false),
@@ -94,6 +99,8 @@ EcalUncalibratedRecHit EcalUncalibRecHitMultiFitAlgo::makeRecHit(const EcalDataF
   }
   
   if (!usePrefit) {
+    
+//     printf("detid = %i\n",dataFrame.id().rawId());
   
     if(!_computeErrors) _pulsefunc.disableErrorCalculation();
     status = _pulsefunc.DoFit(amplitudes,noisecor,pedrms,activeBX,fullpulse,fullpulsecov);
@@ -113,6 +120,107 @@ EcalUncalibratedRecHit EcalUncalibRecHitMultiFitAlgo::makeRecHit(const EcalDataF
     
     amplitude = status ? _pulsefunc.X()[ipulseintime] : 0.;
     amperr = status ? _pulsefunc.Errors()[ipulseintime] : 0.;
+    
+    
+    DetId id = dataFrame.id();
+    bool isbarrel = id.subdetId() == EcalBarrel;    
+    
+    
+//     if (false && isbarrel && amplitude > 40.) {
+//     if (id.rawId()==838865670) { 
+    if (id.rawId() == 838882443) {
+    
+      gROOT->SetBatch();
+      gStyle->SetOptStat(0);
+
+      
+  //     std::cout << _pulsefunc.pulsemat() << std::endl;
+  //     std::cout << fullpulse << std::endl;
+//       std::cout << fullpulsecov << std::endl;
+      
+      TH1D *hsample = new TH1D("hsample","",10,-0.5,9.5);
+      for (unsigned int isample=0; isample<nsample; ++isample) {
+        int ibin = hsample->FindBin(double(isample));
+        hsample->SetBinContent(ibin,amplitudes[isample]);
+        hsample->SetBinError(ibin,pedrms);
+      }
+      
+      hsample->GetXaxis()->SetTitle("sample");
+      hsample->GetYaxis()->SetTitle("amplitude (ADC counts)");
+      hsample->SetLineColor(kBlack);
+      hsample->SetMarkerColor(kBlack);
+      
+      TCanvas *cpulse = new TCanvas;
+      hsample->Draw("E");
+      
+      
+      const unsigned int npulse = _pulsefunc.BXs().rows();
+      std::vector<TH1D*> hpulses(npulse,0);
+      std::vector<double> sumerrsq(nsample,0.);
+//       TH1D *hpulseit = 0;
+      TH1D *hpulsesum = new TH1D("hpulsesum","",10,-0.5,9.5);
+      for (unsigned int ipulse=0; ipulse<npulse; ++ipulse) {
+        int bx = _pulsefunc.BXs().coeff(ipulse);
+        int idx = bx + 5;
+        int offset = 7-3-bx;
+        
+        double amp = status ? _pulsefunc.X().coeff(ipulse) : 0.;
+              
+        TH1D *hpulse = hpulses[ipulse];
+        
+/*        if (bx==0) {
+          hpulseit = hpulse;
+        }   */   
+        
+        hpulse = new TH1D(TString::Format("hpulse_%i",bx),"",10,-0.5,9.5);
+        for (unsigned int isample=0; isample<nsample; ++isample) {
+          int ibin = hpulse->FindBin(double(isample));
+          hpulsesum->Fill(double(isample),amp*fullpulse(offset+isample));
+          sumerrsq[isample] += amp*amp*fullpulsecov(offset+isample,offset+isample);
+          hpulse->SetBinContent(ibin,amp*fullpulse(offset+isample));          
+          hpulse->SetBinError(ibin,amp*sqrt(fullpulsecov(offset+isample,offset+isample)));
+        }
+        
+        if (bx==0) {
+          hpulse->SetLineColor(kRed);
+        }      
+        else {
+          hpulse->SetLineColor(idx+2);
+        }
+        
+        hpulse->Draw("HISTSAME");
+        
+
+      }
+      
+      
+      for (unsigned int isample=0; isample<nsample; ++isample) {
+        int ibin = hpulsesum->FindBin(double(isample));
+//         printf("isample = %i, error = %5e\n",sqrt(sumerrsq[isample]));
+        hpulsesum->SetBinError(ibin,sqrt(sumerrsq[isample]));
+      }      
+      hpulsesum->SetLineColor(kBlue);
+      hpulsesum->Draw("HISTSAME");
+      
+      cpulse->SaveAs(TString::Format("hpulse_%i_%i_%i_%5f.pdf",isbarrel,npulse,id.rawId(),amplitude));
+      delete cpulse;
+      
+      TCanvas *cpulseit = new TCanvas;
+      hsample->Draw("E");
+//       hpulsesum->SetFillColor(kBlue);
+//       hpulsesum->SetFillStyle(3344);
+      hpulsesum->Draw("E2HISTSAME");
+      cpulseit->SaveAs(TString::Format("hpulsesum_%i_%i_%i_%5f.pdf",isbarrel,npulse,id.rawId(),amplitude));
+      delete cpulseit;
+      
+      delete hsample;
+      for (unsigned int ipulse=0; ipulse<npulse; ++ipulse) {
+        delete hpulses[ipulse];
+      }
+    
+    }
+    
+    
   
   }
   
