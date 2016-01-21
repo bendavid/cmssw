@@ -45,7 +45,8 @@ namespace gen {
 	 std::auto_ptr<Pythia8::Pythia> fMasterGen;
 	 std::auto_ptr<Pythia8::Pythia> fDecayer;
 	 HepMC::Pythia8ToHepMC          toHepMC;
-	 ParameterCollector	        fParameters;
+// 	 ParameterCollector	        fParameters;
+         edm::ParameterSet	        fParameters;
 	 
 	 unsigned int                   pythiaPylistVerbosity;
          bool                           pythiaHepMCVerbosity;
@@ -59,6 +60,7 @@ namespace gen {
          EvtGenDecays* evtgenDecays;
          std::string evtgenDecFile;
          std::string evtgenPdlFile;
+         std::string slhafile_;
 
       private:
 
