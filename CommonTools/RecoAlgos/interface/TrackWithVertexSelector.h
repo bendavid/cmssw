@@ -54,11 +54,6 @@ class TrackWithVertexSelector {
       edm::EDGetTokenT<edm::ValueMap<float> > timesToken_, timeResosToken_;
       bool          vtxFallback_;
       double        zetaVtx_, rhoVtx_, nSigmaDtVertex_;
-      bool useWeightsAndChiSq_;
-      double maxChiSq_;
-      double chiSqTight_;
-      double dzTight_;
-      double dtTight_;
 
       reco::VertexCollection const * vcoll_ = nullptr;
       edm::ValueMap<float> const * timescoll_ = nullptr;
