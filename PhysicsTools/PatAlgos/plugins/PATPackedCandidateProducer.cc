@@ -82,12 +82,8 @@ namespace pat {
             std::vector< edm::EDGetTokenT<edm::View<reco::CompositePtrCandidate> > > SVWhiteLists_;
 
             const double minPtForTrackProperties_;
-<<<<<<< HEAD
-           
-=======
             bool storeTiming_;
 
->>>>>>> gpetruc/more_sensible_PF_times
             // for debugging
             float calcDxy(float dx, float dy, float phi) const {
                 return - dx * std::sin(phi) + dy * std::cos(phi);
