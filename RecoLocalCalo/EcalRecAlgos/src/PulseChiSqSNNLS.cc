@@ -98,7 +98,7 @@ bool PulseChiSqSNNLS::DoFit(const SampleVector &samples, const SampleMatrix &sam
   int nPedestals = 0;
   for (int gainidx=0; gainidx<ngains; ++gainidx) {
     SampleGainVector mask = gainidx*SampleGainVector::Ones();
-    SampleVector pedestal = (gains.array()==mask.array()).cast<SampleVector::value_type>();
+    SampleVector pedestal = (gains.array()==mask.array()).cast<SampleVector::Scalar>();
     if (pedestal.maxCoeff()>0.) {
       ++nPedestals;      
       _bxs.resize(npulse+nPedestals);

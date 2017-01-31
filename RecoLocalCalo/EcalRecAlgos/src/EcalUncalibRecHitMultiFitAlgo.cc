@@ -150,7 +150,7 @@ EcalUncalibratedRecHit EcalUncalibRecHitMultiFitAlgo::makeRecHit(const EcalDataF
       noisecov = SampleMatrix::Zero();
       for (unsigned int gainidx=0; gainidx<noisecors.size(); ++gainidx) {
         SampleGainVector mask = gainidx*SampleGainVector::Ones();
-        SampleVector pedestal = (gainsNoise.array()==mask.array()).cast<SampleVector::value_type>();
+        SampleVector pedestal = (gainsNoise.array()==mask.array()).cast<SampleVector::Scalar>();
         if (pedestal.maxCoeff()>0.) {
           //select out relevant components of each correlation matrix, and assume no correlation between samples with
           //different gain
