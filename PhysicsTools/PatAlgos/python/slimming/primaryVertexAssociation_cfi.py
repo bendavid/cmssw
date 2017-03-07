@@ -34,10 +34,10 @@ primaryVertexAssociation = cms.EDProducer("PFCandidatePrimaryVertexSorter",
 
 )
 
-from Configuration.Eras.Modifier_phase2_timing_cff import phase2_timing
-phase2_timing.toModify(
-    primaryVertexAssociation,
-    trackTimeTag=cms.InputTag("trackTimeValueMapProducer","generalTracksConfigurableFlatResolutionModel"),
-    trackTimeResoTag=cms.InputTag("trackTimeValueMapProducer","generalTracksConfigurableFlatResolutionModelResolution"),
-    assignment=dict(useTiming=True),
-)
+#from Configuration.Eras.Modifier_phase2_timing_cff import phase2_timing
+#phase2_timing.toModify(
+    #primaryVertexAssociation,
+    #trackTimeTag=cms.InputTag("trackTimeValueMapProducer","generalTracksConfigurableFlatResolutionModel"),
+    #trackTimeResoTag=cms.InputTag("trackTimeValueMapProducer","generalTracksConfigurableFlatResolutionModelResolution"),
+    #assignment=dict(useTiming=True),
+#)
