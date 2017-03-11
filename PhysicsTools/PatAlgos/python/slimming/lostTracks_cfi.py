@@ -11,3 +11,8 @@ lostTracks = cms.EDProducer("PATLostTracks",
     minHits = cms.uint32(8),	
     minPixelHits = cms.uint32(1),	
 )
+
+from Configuration.Eras.Modifier_phase2_timing_cff import phase2_timing
+phase2_timing.toModify(lostTracks,
+    originalVertices = cms.InputTag("offlinePrimaryVertices4D"),
+)

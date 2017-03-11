@@ -85,10 +85,16 @@ puppi = cms.EDProducer("PuppiProducer",#cms.PSet(#"PuppiProducer",
                       )
 )
                         
-#from Configuration.Eras.Modifier_phase2_common_cff import phase2_common
-#phase2_common.toModify(
-    #puppi,
-    #UsePVAssignmentMap = True,
-    #PVAssignment = cms.InputTag('primaryVertexAssociation','original'),
-    #PVAssignmentQuality = cms.InputTag('primaryVertexAssociation','original'),
-#)
+from Configuration.Eras.Modifier_phase2_common_cff import phase2_common
+phase2_common.toModify(
+    puppi,
+    UsePVAssignmentMap = True,
+    PVAssignment = cms.InputTag('primaryVertexAssociation','original'),
+    PVAssignmentQuality = cms.InputTag('primaryVertexAssociation','original'),
+)
+
+from Configuration.Eras.Modifier_phase2_timing_cff import phase2_timing
+phase2_timing.toModify(
+    puppi,
+    vertexName = cms.InputTag("offlinePrimaryVertices4D"),
+)
