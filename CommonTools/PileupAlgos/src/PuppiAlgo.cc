@@ -28,6 +28,7 @@ PuppiAlgo::PuppiAlgo(edm::ParameterSet &iConfig) {
         int    pAlgoId      = lAlgos[i0].getParameter<int >  ("algoId");
         bool   pCharged     = lAlgos[i0].getParameter<bool>  ("useCharged");
         bool   pWeight0     = lAlgos[i0].getParameter<bool>  ("applyLowPUCorr");
+        bool   pAllDensity  = lAlgos[i0].getParameter<bool>  ("useAllForDensity");
         int    pComb        = lAlgos[i0].getParameter<int>   ("combOpt");           // 0=> add in chi2/1=>Multiply p-values
         double pConeSize    = lAlgos[i0].getParameter<double>("cone");              // Min Pt when computing pt and rms
         double pRMSPtMin    = lAlgos[i0].getParameter<double>("rmsPtMin");          // Min Pt when computing pt and rms
@@ -35,6 +36,7 @@ PuppiAlgo::PuppiAlgo(edm::ParameterSet &iConfig) {
         fAlgoId        .push_back(pAlgoId);
         fCharged       .push_back(pCharged);
         fAdjust        .push_back(pWeight0);
+        fAllDensity    .push_back(pAllDensity);
         fCombId        .push_back(pComb);
         fConeSize      .push_back(pConeSize);
         fRMSPtMin      .push_back(pRMSPtMin);
@@ -111,25 +113,27 @@ void PuppiAlgo::add(const fastjet::PseudoJet &iParticle,const double &iVal,const
     //// if used fCharged and not CHPU, just return
     // fPups.push_back(iVal); //original
     // fNCount[iAlgo]++;
+    
+    int minRegisterForDensity = fAllDensity[iAlgo] ? 1 : 3;
 
     // added by Nhan -- for all eta regions, compute mean/RMS from the central charged PU
     //std::cout << "std::abs(puppi_register) = " << std::abs(puppi_register) << std::endl;
-    if ((std::abs(iParticle.eta()) < fEtaMaxExtrap) && (std::abs(puppi_register) >= 3)){
+    if ((std::abs(iParticle.eta()) < fEtaMaxExtrap) && (std::abs(puppi_register) >= minRegisterForDensity)){
         fPups.push_back(iVal);
         // fPupsPV.push_back(iVal);        
         fNCount[iAlgo]++;
     }
     // for the low PU case, correction.  for checking that the PU-only median will be below the PV particles
-    if(std::abs(iParticle.eta()) < fEtaMaxExtrap && (std::abs(puppi_register) >=1 && std::abs(puppi_register) <=2)) fPupsPV.push_back(iVal);
+    if(std::abs(iParticle.eta()) < fEtaMaxExtrap && std::abs(puppi_register) == 1) fPupsPV.push_back(iVal);
 
     if (fEtaMaxExtrap < 0 && std::abs(iParticle.eta()) > fEtaMin[0] && std::abs(iParticle.eta()) < fEtaMax[0]) { 
-      if((fCharged[iAlgo] && std::abs(puppi_register) >= 3) || !fCharged[iAlgo]) { 
+      if((fCharged[iAlgo] && std::abs(puppi_register) >= minRegisterForDensity) || !fCharged[iAlgo]) { 
         fPups.push_back(iVal);
         fNCount[iAlgo]++;
       }
     }
     // for the low PU case, correction.  for checking that the PU-only median will be below the PV particles
-    if(std::abs(iParticle.eta()) > fEtaMin[0] && std::abs(iParticle.eta()) < fEtaMax[0] && (std::abs(puppi_register) >=1 && std::abs(puppi_register) <=2)) fPupsPV.push_back(iVal);
+    if(std::abs(iParticle.eta()) > fEtaMin[0] && std::abs(iParticle.eta()) < fEtaMax[0] && std::abs(puppi_register) == 1) fPupsPV.push_back(iVal);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

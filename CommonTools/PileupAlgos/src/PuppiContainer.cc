@@ -55,9 +55,10 @@ void PuppiContainer::initialize(const std::vector<RecoObj> &iRecoObjects) {
         }                   
         //curPseudoJet.reset_PtYPhiM(fRecoParticle.pt,fRecoParticle.eta,fRecoParticle.phi,fRecoParticle.m);
         int puppi_register = 0;
-        if(fRecoParticle.id == 0 or fRecoParticle.charge == 0)  puppi_register = 0; // zero is neutral hadron
-        if(fRecoParticle.id == 1 and fRecoParticle.charge != 0) puppi_register = fRecoParticle.charge; // from PV use the
-        if(fRecoParticle.id == 2 and fRecoParticle.charge != 0) puppi_register = fRecoParticle.charge+5; // from NPV use the charge as key +5 as key
+        if(fRecoParticle.id == 0 and fRecoParticle.charge == 0)  puppi_register = 0; // zero is neutral hadron
+        if(fRecoParticle.id == 0 and fRecoParticle.charge != 0) puppi_register = 2;  //unassociated charged use 2
+        if(fRecoParticle.id == 1 and fRecoParticle.charge != 0) puppi_register = 1; // from PV use 1
+        if(fRecoParticle.id == 2 and fRecoParticle.charge != 0) puppi_register = 3; // from pileup vertex use 3
         curPseudoJet.set_user_info( new PuppiUserInfo( puppi_register ) );
         // fill vector of pseudojets for internal references
         fPFParticles.push_back(curPseudoJet);

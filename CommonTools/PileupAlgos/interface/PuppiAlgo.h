@@ -61,6 +61,7 @@ private:
   std::vector<int>    fAlgoId;
   std::vector<bool>   fCharged;
   std::vector<bool>   fAdjust;
+  std::vector<bool>   fAllDensity;
   std::vector<int>    fCombId;
   std::vector<double> fConeSize;
   std::vector<double> fRMSPtMin;
