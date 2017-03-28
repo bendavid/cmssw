@@ -4,8 +4,8 @@ puppiCentral = cms.VPSet(
                  cms.PSet(
                   algoId           = cms.int32(5),  #0 is default Puppi
                   useCharged       = cms.bool(True),
-                  applyLowPUCorr   = cms.bool(True),
-                  useAllForDensity = cms.bool(False),
+                  applyLowPUCorr   = cms.bool(False),
+                  useAllForDensity = cms.bool(True),
                   combOpt          = cms.int32(0),
                   cone             = cms.double(0.4),
                   rmsPtMin         = cms.double(0.1),
@@ -17,8 +17,8 @@ puppiForward = cms.VPSet(
                 cms.PSet(
                  algoId         = cms.int32(5),  #0 is default Puppi
                  useCharged     = cms.bool(False),
-                 applyLowPUCorr = cms.bool(True),
-                 useAllForDensity = cms.bool(False),
+                 applyLowPUCorr = cms.bool(False),
+                 useAllForDensity = cms.bool(True),
                  combOpt        = cms.int32(0),
                  cone           = cms.double(0.4),
                  rmsPtMin       = cms.double(0.5),
