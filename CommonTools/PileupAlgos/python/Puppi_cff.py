@@ -52,17 +52,6 @@ puppi = cms.EDProducer("PuppiProducer",#cms.PSet(#"PuppiProducer",
                        algos          = cms.VPSet( 
                         cms.PSet( 
                          etaMin = cms.vdouble(0.),
-                         etaMax = cms.vdouble(1.5),
-                         ptMin  = cms.vdouble(0.),#Normally 0
-                         MinNeutralPt   = cms.vdouble(0.2),
-                         MinNeutralPtSlope   = cms.vdouble(0.015),
-                         RMSEtaSF = cms.vdouble(1.0),
-                         MedEtaSF = cms.vdouble(1.0),
-                         EtaMaxExtrap = cms.double(-1.0),
-                         puppiAlgos = puppiCentral
-                        ),
-                        cms.PSet( 
-                         etaMin = cms.vdouble(1.5),
                          etaMax = cms.vdouble(2.5),
                          ptMin  = cms.vdouble(0.),#Normally 0
                          MinNeutralPt   = cms.vdouble(0.2),
@@ -72,6 +61,17 @@ puppi = cms.EDProducer("PuppiProducer",#cms.PSet(#"PuppiProducer",
                          EtaMaxExtrap = cms.double(-1.0),
                          puppiAlgos = puppiCentral
                         ),
+                        #cms.PSet( 
+                         #etaMin = cms.vdouble(1.5),
+                         #etaMax = cms.vdouble(2.5),
+                         #ptMin  = cms.vdouble(0.),#Normally 0
+                         #MinNeutralPt   = cms.vdouble(0.2),
+                         #MinNeutralPtSlope   = cms.vdouble(0.015),
+                         #RMSEtaSF = cms.vdouble(1.0),
+                         #MedEtaSF = cms.vdouble(1.0),
+                         #EtaMaxExtrap = cms.double(-1.0),
+                         #puppiAlgos = puppiCentral
+                        #),
                         cms.PSet( 
                          etaMin = cms.vdouble(2.5),
                          etaMax = cms.vdouble(3.0),
