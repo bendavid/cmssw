@@ -51,15 +51,22 @@ trackRefsForJetsBeforeSorting4D = trackRefsForJets.clone(src="trackWithVertexRef
 from SimTracker.TrackerHitAssociation.tpClusterProducer_cfi import tpClusterProducer
 from SimTracker.TrackAssociatorProducers.quickTrackAssociatorByHits_cfi import quickTrackAssociatorByHits
 from SimTracker.TrackAssociation.trackTimeValueMapProducer_cfi import trackTimeValueMapProducer
+
+tktimeassoc = cms.Sequence(tpClusterProducer *
+                           quickTrackAssociatorByHits *
+                           trackTimeValueMapProducer
+                           )
+
+tktimevertexreco = cms.Sequence(unsortedOfflinePrimaryVertices4D *
+                                trackWithVertexRefSelectorBeforeSorting4D *
+                                trackRefsForJetsBeforeSorting4D *
+                                offlinePrimaryVertices4D *
+                                offlinePrimaryVertices4DWithBS
+                                )
+
 _phase2_tktiming_vertexreco = cms.Sequence( vertexreco.copy() *
-                                            tpClusterProducer *
-                                            quickTrackAssociatorByHits *
-                                            trackTimeValueMapProducer *
-                                            trackWithVertexRefSelectorBeforeSorting4D *
-                                            trackRefsForJetsBeforeSorting4D *
-                                            unsortedOfflinePrimaryVertices4D *
-                                            offlinePrimaryVertices4D *
-                                            offlinePrimaryVertices4DWithBS 
+                                            tktimeassoc *
+                                            tktimevertexreco
                                             )
 
 from Configuration.Eras.Modifier_phase2_timing_cff import phase2_timing
