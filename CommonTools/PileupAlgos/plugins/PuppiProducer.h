@@ -19,6 +19,10 @@
 class PuppiProducer : public edm::stream::EDProducer<> {
 
 public:
+  
+	typedef edm::Association<reco::VertexCollection> CandToVertex;
+	typedef edm::ValueMap<int> CandToVertexQuality;
+  
 	explicit PuppiProducer(const edm::ParameterSet&);
 	~PuppiProducer();
 
@@ -39,19 +43,26 @@ private:
       
 	edm::EDGetTokenT< CandidateView > tokenPFCandidates_;
 	edm::EDGetTokenT< VertexCollection > tokenVertices_;
+	edm::EDGetTokenT< VertexCollection > tokenVerticesForMultiplicity_;
+	edm::EDGetTokenT<CandToVertex> tokenPVAssignment_;
+	edm::EDGetTokenT<CandToVertexQuality> tokenPVAssignmentQuality_;
 	std::string     fPuppiName;
 	std::string     fPFName;	
 	std::string     fPVName;
 	bool 			fPuppiDiagnostics;
 	bool 			fPuppiForLeptons;
 	bool            fUseDZ;
+	bool            fUseTime;
 	float           fDZCut;
+	float           fDTSigCut;
 	float           fPtMax;
 	bool fUseExistingWeights;
 	bool fUseWeightsNoLep;
 	bool fClonePackedCands;
 	int fVtxNdofCut;
 	double fVtxZCut;
+	bool fUsePVAssignmentMap;
+	bool fAssignmentQualityForPrimary;
 	std::unique_ptr<PuppiContainer> fPuppiContainer;
 	std::vector<RecoObj> fRecoObjCollection;
         std::unique_ptr< PFOutputCollection >          fPuppiCandidates;

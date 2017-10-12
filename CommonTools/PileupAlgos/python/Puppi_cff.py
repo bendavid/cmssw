@@ -29,9 +29,14 @@ puppi = cms.EDProducer("PuppiProducer",#cms.PSet(#"PuppiProducer",
                        puppiForLeptons = cms.bool(False),
                        UseDeltaZCut   = cms.bool(True),
                        DeltaZCut      = cms.double(0.3),
+                       UseTime        = cms.bool(False),
+                       DeltaTSigCut   = cms.double(3.0),
 		       PtMaxNeutrals  = cms.double(200.),
                        candName       = cms.InputTag('particleFlow'),
                        vertexName     = cms.InputTag('offlinePrimaryVertices'),
+                       vertexForMultiplicityName = cms.InputTag('offlinePrimaryVertices'),
+                       PVAssignment = cms.InputTag(''),
+                       PVAssignmentQuality = cms.InputTag(''),
                        #candName      = cms.string('packedPFCandidates'),
                        #vertexName     = cms.string('offlineSlimmedPrimaryVertices'),
                        applyCHS       = cms.bool  (True),
@@ -43,6 +48,8 @@ puppi = cms.EDProducer("PuppiProducer",#cms.PSet(#"PuppiProducer",
                        clonePackedCands   = cms.bool(False), # should only be set to True for MiniAOD
                        vtxNdofCut     = cms.int32(4),
                        vtxZCut        = cms.double(24),
+                       UsePVAssignmentMap = cms.bool(False),
+                       AssignmentQualityForPrimary = cms.int32(2),
                        algos          = cms.VPSet( 
                         cms.PSet( 
                          etaMin = cms.vdouble(0.),
@@ -109,4 +116,11 @@ phase2_common.toModify(
              puppiAlgos = puppiForward
        )
     )
+)
+
+from Configuration.Eras.Modifier_phase2_timing_layer_cff import phase2_timing_layer
+phase2_timing_layer.toModify(
+    puppi,
+    UseTime = cms.bool(True),
+    vertexForMultiplicityName = cms.InputTag('offlinePrimaryVertices1D'),
 )
