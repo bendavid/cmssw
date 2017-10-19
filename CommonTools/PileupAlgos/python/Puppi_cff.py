@@ -102,7 +102,7 @@ phase2_common.toModify(
              MinNeutralPtSlope   = cms.vdouble(0.015,0.015, 0.030, 0.030),
              RMSEtaSF = cms.vdouble(1.0, 1.0, 1.0, 1.0),
              MedEtaSF = cms.vdouble(1.0, 1.0, 1.0, 1.0),
-             EtaMaxExtrap = cms.double(-1.0),
+             EtaMaxExtrap = cms.double(2.0),
              puppiAlgos = puppiCentral
         ), cms.PSet( 
              etaMin              = cms.vdouble( 3.5),
@@ -112,7 +112,7 @@ phase2_common.toModify(
              MinNeutralPtSlope   = cms.vdouble(0.08),
              RMSEtaSF            = cms.vdouble(1.0 ),
              MedEtaSF            = cms.vdouble(0.75),
-             EtaMaxExtrap        = cms.double( -1.0),
+             EtaMaxExtrap        = cms.double( 2.0),
              puppiAlgos = puppiForward
        )
     )
