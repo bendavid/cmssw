@@ -78,6 +78,14 @@ MicroEventContent = cms.PSet(
     )
 )
 
+from Configuration.Eras.Modifier_phase2_timing_layer_cff import phase2_timing_layer
+
+_phase2_timing_layer_MicroEventContent = [ 'keep *_offlineSlimmedPrimaryVertices1D_*_*',
+                                          ]
+
+_phase2_timing_layer_mod_MicroEventContent = MicroEventContent.outputCommands + _phase2_timing_layer_MicroEventContent
+phase2_timing_layer.toModify( MicroEventContent, outputCommands = _phase2_timing_layer_mod_MicroEventContent )
+
 MicroEventContentGEN = cms.PSet(
     outputCommands = cms.untracked.vstring(
         'keep patPackedGenParticles_packedGenParticles_*_*',
