@@ -200,7 +200,7 @@ void PuppiProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) {
         }
       }
       else {
-        if (std::abs(pReco.charge) > 0 && lPack->pvAssociationQuality()>=1){
+        if (std::abs(pReco.charge) > 0 && lPack->pvAssociationQuality()>=(fAssignmentQualityForPrimary-1)){
           if (lPack->vertexRef().key()==0) {
             pReco.id = 1;
           }
