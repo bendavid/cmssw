@@ -46,7 +46,9 @@ private:
 	bool 			fPuppiDiagnostics;
 	bool 			fPuppiForLeptons;
 	bool            fUseDZ;
+	bool            fUseTime;
 	float           fDZCut;
+	float           fDTSigCut;
 	float           fPtMax;
 	bool fUseExistingWeights;
 	bool fUseWeightsNoLep;

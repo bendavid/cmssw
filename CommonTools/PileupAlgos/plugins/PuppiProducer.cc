@@ -32,7 +32,9 @@ PuppiProducer::PuppiProducer(const edm::ParameterSet& iConfig) {
   fPuppiDiagnostics = iConfig.getParameter<bool>("puppiDiagnostics");
   fPuppiForLeptons = iConfig.getParameter<bool>("puppiForLeptons");
   fUseDZ     = iConfig.getParameter<bool>("UseDeltaZCut");
+  fUseTime     = iConfig.getParameter<bool>("UseTime");
   fDZCut     = iConfig.getParameter<double>("DeltaZCut");
+  fDTSigCut     = iConfig.getParameter<double>("DeltaTSigCut");
   fPtMax     = iConfig.getParameter<double>("PtMaxNeutrals");
   fUseExistingWeights     = iConfig.getParameter<bool>("useExistingWeights");
   fUseWeightsNoLep        = iConfig.getParameter<bool>("useWeightsNoLep");
@@ -105,7 +107,8 @@ void PuppiProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) {
     pReco.charge = itPF->charge(); 
     const reco::Vertex *closestVtx = 0;
     double pDZ    = -9999; 
-    double pD0    = -9999; 
+    double pD0    = -9999;
+    double pDTSig = -9999; 
     int    pVtxId = -9999; 
     bool lFirst = true;
     const pat::PackedCandidate *lPack = dynamic_cast<const pat::PackedCandidate*>(&(*itPF));
@@ -114,12 +117,18 @@ void PuppiProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) {
       const reco::PFCandidate *pPF = dynamic_cast<const reco::PFCandidate*>(&(*itPF));
       double curdz = 9999;
       int closestVtxForUnassociateds = -9999;
+      bool usetime = false;
       for(reco::VertexCollection::const_iterator iV = pvCol->begin(); iV!=pvCol->end(); ++iV) {
         if(lFirst) {
           if      ( pPF->trackRef().isNonnull()    ) pDZ = pPF->trackRef()   ->dz(iV->position());
           else if ( pPF->gsfTrackRef().isNonnull() ) pDZ = pPF->gsfTrackRef()->dz(iV->position());
           if      ( pPF->trackRef().isNonnull()    ) pD0 = pPF->trackRef()   ->d0();
           else if ( pPF->gsfTrackRef().isNonnull() ) pD0 = pPF->gsfTrackRef()->d0();
+          
+          usetime = fUseTime && pPF->isTimeValid() && iV->tError()>0.;
+          float tErr = std::sqrt(pPF->timeError()*pPF->timeError() + iV->tError()*iV->tError());
+          pDTSig = (pPF->time()-iV->t())/tErr;
+          
           lFirst = false;
           if(pDZ > -9999) pVtxId = 0;
         }
@@ -153,7 +162,14 @@ void PuppiProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) {
         if (tmpFromPV == 3){ pReco.id = 1; }
         if (tmpFromPV == 1 || tmpFromPV == 2){ 
           pReco.id = 0;
-          if (!fPuppiForLeptons && fUseDZ && (std::abs(pDZ) < fDZCut)) pReco.id = 1;
+          if (!fPuppiForLeptons && fUseDZ) { 
+            if (std::abs(pDZ) < fDZCut && (!usetime || std::abs(pDTSig) < fDTSigCut) ) {
+              pReco.id = 1;
+            }
+            else {
+              pReco.id = 2;
+            }
+          }
           if (!fPuppiForLeptons && fUseDZ && (std::abs(pDZ) > fDZCut)) pReco.id = 2;
           if (fPuppiForLeptons && tmpFromPV == 1) pReco.id = 2;
           if (fPuppiForLeptons && tmpFromPV == 2) pReco.id = 1;
@@ -165,6 +181,12 @@ void PuppiProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) {
       pD0        = lPack->dxy();
       pReco.dZ      = pDZ;
       pReco.d0      = pD0;
+      
+      bool usetime = fUseTime && lPack->timeError()>0. && pvCol->size() && pvCol->front().tError()>0.;
+      if (usetime) {
+        float tErr = std::sqrt(lPack->timeError()*lPack->timeError() + pvCol->front().tError()*pvCol->front().tError());
+        pDTSig = lPack->dtime(0)/tErr;
+      }
   
       pReco.id = 0; 
       if (std::abs(pReco.charge) == 0){ pReco.id = 0; }
@@ -173,8 +195,14 @@ void PuppiProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) {
         if (lPack->fromPV() == (pat::PackedCandidate::PVUsedInFit)){ pReco.id = 1; }
         if (lPack->fromPV() == (pat::PackedCandidate::PVTight) || lPack->fromPV() == (pat::PackedCandidate::PVLoose)){ 
           pReco.id = 0;
-          if (!fPuppiForLeptons && fUseDZ && (std::abs(pDZ) < fDZCut)) pReco.id = 1;
-          if (!fPuppiForLeptons && fUseDZ && (std::abs(pDZ) > fDZCut)) pReco.id = 2;
+          if (!fPuppiForLeptons && fUseDZ) { 
+            if (std::abs(pDZ) < fDZCut && (!usetime || std::abs(pDTSig) < fDTSigCut) ) {
+              pReco.id = 1;
+            }
+            else {
+              pReco.id = 2;
+            }
+          }
           if (fPuppiForLeptons && lPack->fromPV() == (pat::PackedCandidate::PVLoose)) pReco.id = 2;
           if (fPuppiForLeptons && lPack->fromPV() == (pat::PackedCandidate::PVTight)) pReco.id = 1;
         }

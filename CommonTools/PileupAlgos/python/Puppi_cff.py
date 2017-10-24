@@ -29,6 +29,8 @@ puppi = cms.EDProducer("PuppiProducer",#cms.PSet(#"PuppiProducer",
                        puppiForLeptons = cms.bool(False),
                        UseDeltaZCut   = cms.bool(True),
                        DeltaZCut      = cms.double(0.3),
+                       UseTime        = cms.bool(False),
+                       DeltaTSigCut   = cms.double(3.0),
 		       PtMaxNeutrals  = cms.double(200.),
                        candName       = cms.InputTag('particleFlow'),
                        vertexName     = cms.InputTag('offlinePrimaryVertices'),
@@ -110,4 +112,11 @@ phase2_common.toModify(
              puppiAlgos = puppiForward
        )
     )
+)
+
+from Configuration.Eras.Modifier_phase2_timing_layer_cff import phase2_timing_layer
+phase2_timing_layer.toModify(
+    puppi,
+    UseTime = cms.bool(True),
+    vertexForMultiplicityName = cms.InputTag('offlinePrimaryVertices1D'),
 )
