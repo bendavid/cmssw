@@ -37,26 +37,21 @@ PrimaryVertexAssignment::chargedHadronVertex( const reco::VertexCollection& vert
     time = 0.;
     timeReso = -1.;
   }
-  
-  if (preferHighRanked_) {
-    for(IV iv=vertices.begin(); iv!=vertices.end(); ++iv) {
-        int ivtx = iv - vertices.begin();
-        if (iVertex == ivtx) return std::pair<int,PrimaryVertexAssignment::Quality>(ivtx,PrimaryVertexAssignment::UsedInFit);
-        
-        double dz = std::abs(track->dz(iv->position()));
-        double dt = std::abs(time-iv->t());
-        
-        bool useTimeVtx = useTime && iv->tError()>0.;
-        
-        if ((dz < maxDzForPrimaryAssignment_ or dz/track->dzError() < maxDzSigForPrimaryAssignment_ ) and (!useTimeVtx or dt/timeReso < maxDtSigForPrimaryAssignment_)) {
-          return std::pair<int,PrimaryVertexAssignment::Quality>(ivtx,PrimaryVertexAssignment::PrimaryDz);
-        }               
-    }
+
+  for(IV iv=vertices.begin(); iv!=vertices.end(); ++iv) {
+      int ivtx = iv - vertices.begin();
+      if (iVertex == ivtx) return std::pair<int,PrimaryVertexAssignment::Quality>(ivtx,PrimaryVertexAssignment::UsedInFit);
+      
+      double dz = std::abs(track->dz(iv->position()));
+      double dt = std::abs(time-iv->t());
+      
+      bool useTimeVtx = useTime && iv->tError()>0.;
+      
+      if ((dz < maxDzForHighRankedAssignment_ or dz/track->dzError() < maxDzSigForHighRankedAssignment_ ) and (!useTimeVtx or dt/timeReso < maxDtSigForHighRankedAssignment_)) {
+        return std::pair<int,PrimaryVertexAssignment::Quality>(ivtx,PrimaryVertexAssignment::PrimaryDz);
+      }
   }
 
-    
-  if(iVertex >= 0 ) return std::pair<int,PrimaryVertexAssignment::Quality>(iVertex,PrimaryVertexAssignment::UsedInFit);
-    
   double distmin = std::numeric_limits<double>::max();
   double dzmin = std::numeric_limits<double>::max();
   double dtmin = std::numeric_limits<double>::max();
@@ -125,8 +120,9 @@ PrimaryVertexAssignment::chargedHadronVertex( const reco::VertexCollection& vert
       double minDistanceToJetAxis = maxDistanceToJetAxis_;
       for(IV iv=vertices.begin(); iv!=vertices.end(); ++iv)
       {
+        bool useTimeVtx = useTime && iv->tError()>0.;
         // only check for vertices that are close enough in Z and for tracks that have not too high dXY
-        if(std::abs(track->dz(iv->position())) > maxDzForJetAxisAssigment_ || std::abs(track->dxy(iv->position())) > maxDxyForJetAxisAssigment_) 
+        if(std::abs(track->dz(iv->position())) > maxDzForJetAxisAssigment_ || std::abs(track->dxy(iv->position())) > maxDxyForJetAxisAssigment_ || (useTimeVtx && std::abs(time-iv->t())/timeReso > maxDtSigForPrimaryAssignment_) ) 
           continue;
 
         double distanceToJetAxis = IPTools::jetTrackDistance(transientTrack, direction, *iv).second.value();

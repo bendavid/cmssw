@@ -20,6 +20,9 @@ class PrimaryVertexAssignment {
   enum Quality {UsedInFit=7,PrimaryDz=6,PrimaryV0=5,BTrack=4,Unused=3,OtherDz=2,NotReconstructedPrimary=1,Unassigned=0};
  
   PrimaryVertexAssignment(const edm::ParameterSet& iConfig):
+   maxDzSigForHighRankedAssignment_(iConfig.getParameter<double>("maxDzSigForHighRankedAssignment")),
+   maxDzForHighRankedAssignment_(iConfig.getParameter<double>("maxDzForHighRankedAssignment")),
+   maxDtSigForHighRankedAssignment_(iConfig.getParameter<double>("maxDtSigForHighRankedAssignment")), 
    maxDzSigForPrimaryAssignment_(iConfig.getParameter<double>("maxDzSigForPrimaryAssignment")),
    maxDzForPrimaryAssignment_(iConfig.getParameter<double>("maxDzForPrimaryAssignment")),
    maxDzErrorForPrimaryAssignment_(iConfig.getParameter<double>("maxDzErrorForPrimaryAssignment")),
@@ -31,8 +34,7 @@ class PrimaryVertexAssignment {
    maxDxyForJetAxisAssigment_(iConfig.getParameter<double>("maxDxyForJetAxisAssigment")),
    maxDxySigForNotReconstructedPrimary_(iConfig.getParameter<double>("maxDxySigForNotReconstructedPrimary")),
    maxDxyForNotReconstructedPrimary_(iConfig.getParameter<double>("maxDxyForNotReconstructedPrimary")),
-   useTiming_(iConfig.getParameter<bool>("useTiming")),
-   preferHighRanked_(iConfig.getParameter<bool>("preferHighRanked"))
+   useTiming_(iConfig.getParameter<bool>("useTiming"))
   {}
 
   ~PrimaryVertexAssignment(){}
@@ -90,6 +92,9 @@ class PrimaryVertexAssignment {
 
 
  private  :
+    double    maxDzSigForHighRankedAssignment_;
+    double    maxDzForHighRankedAssignment_;
+    double    maxDtSigForHighRankedAssignment_;
     double    maxDzSigForPrimaryAssignment_;
     double    maxDzForPrimaryAssignment_;
     double    maxDzErrorForPrimaryAssignment_;
@@ -99,10 +104,10 @@ class PrimaryVertexAssignment {
     double    maxDistanceToJetAxis_;
     double    maxDzForJetAxisAssigment_;
     double    maxDxyForJetAxisAssigment_;
+    double    maxDtSigForJetAxisAssigment_;
     double    maxDxySigForNotReconstructedPrimary_;
     double    maxDxyForNotReconstructedPrimary_;
     bool      useTiming_;
-    bool      preferHighRanked_;
 };
 
 #endif
