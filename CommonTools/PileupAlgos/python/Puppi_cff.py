@@ -92,7 +92,10 @@ puppi = cms.EDProducer("PuppiProducer",#cms.PSet(#"PuppiProducer",
 from Configuration.Eras.Modifier_phase2_common_cff import phase2_common
 phase2_common.toModify(
     puppi,
-    DeltaZCut = cms.double(0.1),
+    UseDeltaZCut   = cms.bool(False),
+    UsePVAssignmentMap = cms.bool(True),
+    PVAssignment = cms.InputTag('primaryVertexAssociation','original'),
+    PVAssignmentQuality = cms.InputTag('primaryVertexAssociation','original'),
     algos = cms.VPSet( 
         cms.PSet( 
              etaMin = cms.vdouble(0., 1.5, 2.5, 3.0),
