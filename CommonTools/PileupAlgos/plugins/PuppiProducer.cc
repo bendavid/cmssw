@@ -116,6 +116,7 @@ void PuppiProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) {
 
       const reco::PFCandidate *pPF = dynamic_cast<const reco::PFCandidate*>(&(*itPF));
       double curdz = 9999;
+      float bestweight = 0.;
       int closestVtxForUnassociateds = -9999;
       bool usetime = false;
       for(reco::VertexCollection::const_iterator iV = pvCol->begin(); iV!=pvCol->end(); ++iV) {
@@ -132,9 +133,10 @@ void PuppiProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) {
           lFirst = false;
           if(pDZ > -9999) pVtxId = 0;
         }
-        if(iV->trackWeight(pPF->trackRef())>0) {
+        float w = iV->trackWeight(pPF->trackRef());
+        if(w > bestweight) {
+            bestweight = w;
             closestVtx  = &(*iV);
-            break;
           }        
         // in case it's unassocciated, keep more info
         double tmpdz = 99999;
