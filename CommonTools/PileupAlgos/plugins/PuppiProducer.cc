@@ -45,7 +45,8 @@ PuppiProducer::PuppiProducer(const edm::ParameterSet& iConfig) {
     = consumes<CandidateView>(iConfig.getParameter<edm::InputTag>("candName"));
   tokenVertices_
     = consumes<VertexCollection>(iConfig.getParameter<edm::InputTag>("vertexName"));
- 
+  tokenVerticesForMultiplicity_
+    = consumes<VertexCollection>(iConfig.getParameter<edm::InputTag>("vertexForMultiplicityName"));
 
   produces<edm::ValueMap<float> > ();
   produces<edm::ValueMap<LorentzVector> > ();
@@ -79,13 +80,17 @@ void PuppiProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) {
   edm::Handle<reco::VertexCollection> hVertexProduct;
   iEvent.getByToken(tokenVertices_,hVertexProduct);
   const reco::VertexCollection *pvCol = hVertexProduct.product();
+  
+  edm::Handle<reco::VertexCollection> hVertexForMultiplicityProduct;
+  iEvent.getByToken(tokenVerticesForMultiplicity_,hVertexForMultiplicityProduct);
+  const reco::VertexCollection *pvForMultiplicityCol = hVertexForMultiplicityProduct.product(); 
 
-   int npv = 0;
-   const reco::VertexCollection::const_iterator vtxEnd = pvCol->end();
-   for (reco::VertexCollection::const_iterator vtxIter = pvCol->begin(); vtxEnd != vtxIter; ++vtxIter) {
-      if (!vtxIter->isFake() && vtxIter->ndof()>=fVtxNdofCut && std::abs(vtxIter->z())<=fVtxZCut)
-         npv++;
-   }
+  int npv = 0;
+  const reco::VertexCollection::const_iterator vtxEnd = pvForMultiplicityCol->end();
+  for (reco::VertexCollection::const_iterator vtxIter = pvForMultiplicityCol->begin(); vtxEnd != vtxIter; ++vtxIter) {
+     if (!vtxIter->isFake() && vtxIter->ndof()>=fVtxNdofCut && std::abs(vtxIter->z())<=fVtxZCut)
+        npv++;
+  }
 
   //Fill the reco objects
   fRecoObjCollection.clear();
