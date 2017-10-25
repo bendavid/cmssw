@@ -34,7 +34,9 @@ class PrimaryVertexAssignment {
    maxDxyForJetAxisAssigment_(iConfig.getParameter<double>("maxDxyForJetAxisAssigment")),
    maxDxySigForNotReconstructedPrimary_(iConfig.getParameter<double>("maxDxySigForNotReconstructedPrimary")),
    maxDxyForNotReconstructedPrimary_(iConfig.getParameter<double>("maxDxyForNotReconstructedPrimary")),
-   useTiming_(iConfig.getParameter<bool>("useTiming"))
+   useTiming_(iConfig.getParameter<bool>("useTiming")),
+   useProbability_(iConfig.getParameter<bool>("useProbability")),
+   minProbability_(iConfig.getParameter<double>("minProbability"))
   {}
 
   ~PrimaryVertexAssignment(){}
@@ -108,6 +110,8 @@ class PrimaryVertexAssignment {
     double    maxDxySigForNotReconstructedPrimary_;
     double    maxDxyForNotReconstructedPrimary_;
     bool      useTiming_;
+    bool      useProbability_;
+    bool      minProbability_;
 };
 
 #endif

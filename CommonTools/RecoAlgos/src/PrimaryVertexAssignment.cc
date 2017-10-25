@@ -38,6 +38,39 @@ PrimaryVertexAssignment::chargedHadronVertex( const reco::VertexCollection& vert
     timeReso = -1.;
   }
 
+  if (useProbability_) {
+    double maxprob = 0.;
+    double sumprob = 0.;
+    int ivtxmaxprob = -1;
+    double dzsigmaxprob = -1.;
+    for(IV iv=vertices.begin(); iv!=vertices.end(); ++iv) {
+      int ivtx = iv - vertices.begin();
+      bool useTimeVtx = useTime && iv->tError()>0.;
+      
+      double chisq = pow(track->dz(iv->position())/track->dzError(), 2);
+      if (useTimeVtx) {
+        chisq += pow((time-iv->t())/timeReso, 2);
+      }
+      double prob = iv->nTracks(0.5)*exp(-chisq);
+      if (prob > maxprob) {
+        maxprob = prob;
+        ivtxmaxprob = ivtx;
+        dzsigmaxprob = std::abs(track->dz(iv->position())/track->dzError());
+      }
+      sumprob += prob;
+    }
+    maxprob /= sumprob;
+  
+    if (ivtxmaxprob >=0 && maxprob > minProbability_) {
+      if (ivtxmaxprob == iVertex) {
+        return std::pair<int,PrimaryVertexAssignment::Quality>(ivtxmaxprob,PrimaryVertexAssignment::UsedInFit);
+      }
+      else if (dzsigmaxprob < maxDzSigForPrimaryAssignment_) {
+        return std::pair<int,PrimaryVertexAssignment::Quality>(ivtxmaxprob,PrimaryVertexAssignment::PrimaryDz);
+      }
+    }
+  }
+  
   for(IV iv=vertices.begin(); iv!=vertices.end(); ++iv) {
       int ivtx = iv - vertices.begin();
       if (iVertex == ivtx) return std::pair<int,PrimaryVertexAssignment::Quality>(ivtx,PrimaryVertexAssignment::UsedInFit);
@@ -51,7 +84,7 @@ PrimaryVertexAssignment::chargedHadronVertex( const reco::VertexCollection& vert
         return std::pair<int,PrimaryVertexAssignment::Quality>(ivtx,PrimaryVertexAssignment::PrimaryDz);
       }
   }
-
+  
   double distmin = std::numeric_limits<double>::max();
   double dzmin = std::numeric_limits<double>::max();
   double dtmin = std::numeric_limits<double>::max();
