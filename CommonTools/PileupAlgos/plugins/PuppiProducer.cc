@@ -117,6 +117,7 @@ void PuppiProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) {
       const reco::PFCandidate *pPF = dynamic_cast<const reco::PFCandidate*>(&(*itPF));
       double curdz = 9999;
       float bestweight = 0.;
+      int ivtxbestweight = -1;
       int closestVtxForUnassociateds = -9999;
       bool usetime = false;
       for(reco::VertexCollection::const_iterator iV = pvCol->begin(); iV!=pvCol->end(); ++iV) {
@@ -137,6 +138,7 @@ void PuppiProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) {
         if(w > bestweight) {
             bestweight = w;
             closestVtx  = &(*iV);
+            ivtxbestweight = pVtxId;
           }        
         // in case it's unassocciated, keep more info
         double tmpdz = 99999;
@@ -151,8 +153,8 @@ void PuppiProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) {
       }
       int tmpFromPV = 0;  
       // mocking the miniAOD definitions
-      if (closestVtx != 0 && std::abs(pReco.charge) > 0 && pVtxId > 0) tmpFromPV = 0;
-      if (closestVtx != 0 && std::abs(pReco.charge) > 0 && pVtxId == 0) tmpFromPV = 3;
+      if (closestVtx != 0 && std::abs(pReco.charge) > 0 && ivtxbestweight > 0) tmpFromPV = 0;
+      if (closestVtx != 0 && std::abs(pReco.charge) > 0 && ivtxbestweight == 0) tmpFromPV = 3;
       if (closestVtx == 0 && std::abs(pReco.charge) > 0 && closestVtxForUnassociateds == 0) tmpFromPV = 2;
       if (closestVtx == 0 && std::abs(pReco.charge) > 0 && closestVtxForUnassociateds != 0) tmpFromPV = 1;
       pReco.dZ      = pDZ;
