@@ -12,7 +12,7 @@ from Configuration.Eras.Modifier_phase2_common_cff import phase2_common
 phase2_common.toModify(
     primaryVertexAssociation,
     assignment=dict(maxDzErrorForPrimaryAssignment = 999.,
-                    maxDzSigForHighRankedAssignment = 4.0,
+                    maxDzSigForHighRankedAssignment = 3.0,
                     ),
 )
 
