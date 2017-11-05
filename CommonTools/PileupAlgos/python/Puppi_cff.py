@@ -86,6 +86,7 @@ from Configuration.Eras.Modifier_phase2_common_cff import phase2_common
 phase2_common.toModify(
     puppi,
     DeltaZCut = cms.double(0.1),
+    PtMaxNeutrals  = cms.double(-1.),
     algos = cms.VPSet( 
         cms.PSet( 
              etaMin = cms.vdouble(0., 1.5, 2.5, 3.0),
