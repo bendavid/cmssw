@@ -97,6 +97,7 @@ phase2_common.toModify(
     UsePVAssignmentMap = cms.bool(True),
     PVAssignment = cms.InputTag('primaryVertexAssociation','original'),
     PVAssignmentQuality = cms.InputTag('primaryVertexAssociation','original'),
+    PtMaxNeutrals  = cms.double(-1.),
     algos = cms.VPSet( 
         cms.PSet( 
              etaMin = cms.vdouble(0., 1.5, 2.5, 3.0),
