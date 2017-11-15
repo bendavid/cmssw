@@ -127,4 +127,7 @@ phase2_timing_layer.toModify(
     puppi,
     UseTime = cms.bool(True),
     vertexForMultiplicityName = cms.InputTag('offlinePrimaryVertices1D'),
+    UsePVAssignmentMapAlt = cms.bool(True),
+    PVAssignmentAlt = cms.InputTag('primaryVertexAssociation1D','original'),
+    PVAssignmentQualityAlt = cms.InputTag('primaryVertexAssociation1D','original'),
 )
