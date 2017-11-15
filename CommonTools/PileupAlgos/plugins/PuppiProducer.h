@@ -46,6 +46,8 @@ private:
 	edm::EDGetTokenT< VertexCollection > tokenVerticesForMultiplicity_;
 	edm::EDGetTokenT<CandToVertex> tokenPVAssignment_;
 	edm::EDGetTokenT<CandToVertexQuality> tokenPVAssignmentQuality_;
+	edm::EDGetTokenT<CandToVertex> tokenPVAssignmentAlt_;
+	edm::EDGetTokenT<CandToVertexQuality> tokenPVAssignmentQualityAlt_;
 	std::string     fPuppiName;
 	std::string     fPFName;	
 	std::string     fPVName;
@@ -62,6 +64,7 @@ private:
 	int fVtxNdofCut;
 	double fVtxZCut;
 	bool fUsePVAssignmentMap;
+    bool fUsePVAssignmentMapAlt;
 	bool fAssignmentQualityForPrimary;
 	std::unique_ptr<PuppiContainer> fPuppiContainer;
 	std::vector<RecoObj> fRecoObjCollection;

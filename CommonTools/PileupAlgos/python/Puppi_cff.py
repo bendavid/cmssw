@@ -49,6 +49,7 @@ puppi = cms.EDProducer("PuppiProducer",#cms.PSet(#"PuppiProducer",
                        vtxNdofCut     = cms.int32(4),
                        vtxZCut        = cms.double(24),
                        UsePVAssignmentMap = cms.bool(False),
+                       UsePVAssignmentMapAlt = cms.bool(False),
                        AssignmentQualityForPrimary = cms.int32(2),
                        algos          = cms.VPSet( 
                         cms.PSet( 
