@@ -31,6 +31,8 @@ PrimaryVertexAssignment::chargedHadronVertex( const reco::VertexCollection& vert
       index++;
   }
   
+  if(iVertex >= 0 ) return std::pair<int,PrimaryVertexAssignment::Quality>(iVertex,PrimaryVertexAssignment::UsedInFit);
+  
   bool useTime = useTiming_;
   if (edm::isNotFinite(time) || timeReso<1e-6) {
     useTime = false;
@@ -40,7 +42,6 @@ PrimaryVertexAssignment::chargedHadronVertex( const reco::VertexCollection& vert
 
   for(IV iv=vertices.begin(); iv!=vertices.end(); ++iv) {
       int ivtx = iv - vertices.begin();
-      if (iVertex == ivtx) return std::pair<int,PrimaryVertexAssignment::Quality>(ivtx,PrimaryVertexAssignment::UsedInFit);
       
       double dz = std::abs(track->dz(iv->position()));
       double dt = std::abs(time-iv->t());
