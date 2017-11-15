@@ -42,6 +42,7 @@ PuppiProducer::PuppiProducer(const edm::ParameterSet& iConfig) {
   fVtxNdofCut = iConfig.getParameter<int>("vtxNdofCut");
   fVtxZCut = iConfig.getParameter<double>("vtxZCut");
   fUsePVAssignmentMap = iConfig.getParameter<bool>("UsePVAssignmentMap");
+  fUsePVAssignmentMapAlt = iConfig.getParameter<bool>("UsePVAssignmentMapAlt");
   fAssignmentQualityForPrimary = iConfig.getParameter<int>("AssignmentQualityForPrimary");
   fPuppiContainer = std::unique_ptr<PuppiContainer> ( new PuppiContainer(iConfig) );
 
@@ -55,6 +56,11 @@ PuppiProducer::PuppiProducer(const edm::ParameterSet& iConfig) {
   if (fUsePVAssignmentMap) {
     tokenPVAssignment_ = consumes<CandToVertex>(iConfig.getParameter<edm::InputTag>("PVAssignment"));
     tokenPVAssignmentQuality_ = consumes<CandToVertexQuality>(iConfig.getParameter<edm::InputTag>("PVAssignmentQuality"));
+  }
+  
+  if (fUsePVAssignmentMapAlt) {
+    tokenPVAssignmentAlt_ = consumes<CandToVertex>(iConfig.getParameter<edm::InputTag>("PVAssignmentAlt"));
+    tokenPVAssignmentQualityAlt_ = consumes<CandToVertexQuality>(iConfig.getParameter<edm::InputTag>("PVAssignmentQualityAlt"));
   }
     
   produces<edm::ValueMap<float> > ();
@@ -109,6 +115,20 @@ void PuppiProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) {
     pvAssignmentQuality = hPVAssignmentQuality.product();
   }
   
+  edm::Handle<CandToVertex> hpvAssignmentAlt;
+  const CandToVertex *pvAssignmentAlt = 0;
+  
+  edm::Handle<CandToVertexQuality> hPVAssignmentQualityAlt;
+  const CandToVertexQuality *pvAssignmentQualityAlt = 0;
+  
+  if (fUsePVAssignmentMapAlt) {
+    iEvent.getByToken(tokenPVAssignmentAlt_, hpvAssignmentAlt);
+    pvAssignmentAlt = hpvAssignmentAlt.product();
+    
+    iEvent.getByToken(tokenPVAssignmentQualityAlt_, hPVAssignmentQualityAlt);
+    pvAssignmentQualityAlt = hPVAssignmentQualityAlt.product();    
+  }
+  
   int npv = 0;
   const reco::VertexCollection::const_iterator vtxEnd = pvForMultiplicityCol->end();
   for (reco::VertexCollection::const_iterator vtxIter = pvForMultiplicityCol->begin(); vtxEnd != vtxIter; ++vtxIter) {
@@ -161,12 +181,23 @@ void PuppiProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) {
           if (quality >= fAssignmentQualityForPrimary) {
             const reco::VertexRef &vtxref = (*pvAssignment)[candref];
             int vtxid = vtxref.key();
+            
+            bool fromPrimary = vtxid==0;
+            
+            if (fUsePVAssignmentMapAlt) {
+              int qualityalt = (*pvAssignmentQualityAlt)[candref];
+              const reco::VertexRef &vtxrefalt = (*pvAssignmentAlt)[candref];
+              int vtxidalt = vtxrefalt.key();
+              
+              fromPrimary &= qualityalt >= fAssignmentQualityForPrimary && vtxidalt==0;
+            }
+            
             if      ( pPF->trackRef().isNonnull()    ) pDZ = pPF->trackRef()   ->dz(vtxref->position());
             else if ( pPF->gsfTrackRef().isNonnull() ) pDZ = pPF->gsfTrackRef()->dz(vtxref->position());
             if      ( pPF->trackRef().isNonnull()    ) pD0 = pPF->trackRef()   ->d0();
             else if ( pPF->gsfTrackRef().isNonnull() ) pD0 = pPF->gsfTrackRef()->d0();
             
-            if (vtxid==0) {
+            if (fromPrimary) {
               pReco.id=1;
             }
             else {
