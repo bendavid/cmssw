@@ -23,7 +23,7 @@ sortedPrimaryVertices = cms.EDProducer("RecoChargedRefCandidatePrimaryVertexSort
     maxDxyForNotReconstructedPrimary = cms.double(0.01), #in AND with prev
     useTiming = cms.bool(False),
     useProbability = cms.bool(False),
-    minProbability = cms.double(0.5),
+    minProbability = cms.double(0.),
     ),
   particles = cms.InputTag("trackRefsForJets"),
   trackTimeTag = cms.InputTag(""),

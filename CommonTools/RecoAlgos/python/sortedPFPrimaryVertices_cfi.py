@@ -23,7 +23,7 @@ sortedPFPrimaryVertices = cms.EDProducer("PFCandidatePrimaryVertexSorter",
     maxDxyForNotReconstructedPrimary = cms.double(0.01), #in AND with prev
     useTiming = cms.bool(False),
     useProbability = cms.bool(False),
-    minProbability = cms.double(0.5),
+    minProbability = cms.double(0.),
     ),
   particles = cms.InputTag("particleFlow"),
   vertices= cms.InputTag("offlinePrimaryVertices"),
