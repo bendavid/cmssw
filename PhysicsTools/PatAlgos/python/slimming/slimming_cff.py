@@ -31,6 +31,7 @@ slimmingTask = cms.Task(
     isolatedTracks,
     offlineSlimmedPrimaryVertices,
     primaryVertexAssociation,
+    primaryVertexAssociation1D,
     genParticlesTask,
     selectedPatTrigger,
     slimmedPatTrigger,
