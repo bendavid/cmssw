@@ -40,7 +40,6 @@ PrimaryVertexAssignment::chargedHadronVertex( const reco::VertexCollection& vert
 
   for(IV iv=vertices.begin(); iv!=vertices.end(); ++iv) {
       int ivtx = iv - vertices.begin();
-      if (iVertex == ivtx) return std::pair<int,PrimaryVertexAssignment::Quality>(ivtx,PrimaryVertexAssignment::UsedInFit);
       
       double dz = std::abs(track->dz(iv->position()));
       double dt = std::abs(time-iv->t());
@@ -51,6 +50,8 @@ PrimaryVertexAssignment::chargedHadronVertex( const reco::VertexCollection& vert
         return std::pair<int,PrimaryVertexAssignment::Quality>(ivtx,PrimaryVertexAssignment::PrimaryDz);
       }
   }
+  
+  if(iVertex >= 0 ) return std::pair<int,PrimaryVertexAssignment::Quality>(iVertex,PrimaryVertexAssignment::UsedInFit);
 
   double distmin = std::numeric_limits<double>::max();
   double dzmin = std::numeric_limits<double>::max();
