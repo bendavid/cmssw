@@ -39,13 +39,16 @@ private:
       
 	edm::EDGetTokenT< CandidateView > tokenPFCandidates_;
 	edm::EDGetTokenT< VertexCollection > tokenVertices_;
+	edm::EDGetTokenT< VertexCollection > tokenVerticesForTiming_;
 	std::string     fPuppiName;
 	std::string     fPFName;	
 	std::string     fPVName;
 	bool 			fPuppiDiagnostics;
 	bool 			fPuppiForLeptons;
 	bool            fUseDZ;
+	bool            fUseTime;
 	float           fDZCut;
+	float           fDTSigCut;
 	float           fPtMax;
 	bool fUseExistingWeights;
 	bool fUseWeightsNoLep;

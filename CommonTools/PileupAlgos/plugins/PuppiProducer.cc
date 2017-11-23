@@ -32,7 +32,9 @@ PuppiProducer::PuppiProducer(const edm::ParameterSet& iConfig) {
   fPuppiDiagnostics = iConfig.getParameter<bool>("puppiDiagnostics");
   fPuppiForLeptons = iConfig.getParameter<bool>("puppiForLeptons");
   fUseDZ     = iConfig.getParameter<bool>("UseDeltaZCut");
+  fUseTime     = iConfig.getParameter<bool>("UseTime");
   fDZCut     = iConfig.getParameter<double>("DeltaZCut");
+  fDTSigCut     = iConfig.getParameter<double>("DeltaTSigCut");
   fPtMax     = iConfig.getParameter<double>("PtMaxNeutrals");
   fUseExistingWeights     = iConfig.getParameter<bool>("useExistingWeights");
   fUseWeightsNoLep        = iConfig.getParameter<bool>("useWeightsNoLep");
@@ -46,7 +48,11 @@ PuppiProducer::PuppiProducer(const edm::ParameterSet& iConfig) {
   tokenVertices_
     = consumes<VertexCollection>(iConfig.getParameter<edm::InputTag>("vertexName"));
  
-
+  if (fUseTime) {
+    tokenVerticesForTiming_
+    = consumes<VertexCollection>(iConfig.getParameter<edm::InputTag>("vertexForTimingName"));
+  }
+    
   produces<edm::ValueMap<float> > ();
   produces<edm::ValueMap<LorentzVector> > ();
   produces< edm::ValueMap<reco::CandidatePtr> >(); 
@@ -79,6 +85,11 @@ void PuppiProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) {
   edm::Handle<reco::VertexCollection> hVertexProduct;
   iEvent.getByToken(tokenVertices_,hVertexProduct);
   const reco::VertexCollection *pvCol = hVertexProduct.product();
+  
+  edm::Handle<reco::VertexCollection> hVertexForTimingProduct;
+  iEvent.getByToken(tokenVerticesForTiming_,hVertexForTimingProduct);
+  const reco::VertexCollection *pvForTimingCol = hVertexForTimingProduct.product();
+  const reco::Vertex &pvForTiming0 = (*pvForTimingCol)[0];
 
    int npv = 0;
    const reco::VertexCollection::const_iterator vtxEnd = pvCol->end();
@@ -153,6 +164,11 @@ void PuppiProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) {
           if (fPuppiForLeptons && tmpFromPV == 1) pReco.id = 2;
           if (fPuppiForLeptons && tmpFromPV == 2) pReco.id = 1;
         }
+        bool usetime = fUseTime && pPF->isTimeValid() && pvForTiming0.tError()>0.;
+        float tErr = std::sqrt(pPF->timeError()*pPF->timeError() + pvForTiming0.tError()*pvForTiming0.tError());
+        if (usetime && std::abs(pPF->time()-pvForTiming0.t())/tErr>fDTSigCut) {
+          pReco.id = 2;
+        }
       }
     } 
     else if(lPack->vertexRef().isNonnull() )  {
@@ -172,6 +188,11 @@ void PuppiProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) {
           if (!fPuppiForLeptons && fUseDZ && (std::abs(pDZ) > fDZCut)) pReco.id = 2;
           if (fPuppiForLeptons && lPack->fromPV() == (pat::PackedCandidate::PVLoose)) pReco.id = 2;
           if (fPuppiForLeptons && lPack->fromPV() == (pat::PackedCandidate::PVTight)) pReco.id = 1;
+        }
+        bool usetime = fUseTime && lPack->timeError()>0. && pvForTiming0.tError()>0.;
+        float tErr = std::sqrt(lPack->timeError()*lPack->timeError() + pvForTiming0.tError()*pvForTiming0.tError());
+        if (usetime && std::abs(lPack->time()-pvForTiming0.t())/tErr>fDTSigCut) {
+          pReco.id = 2;
         }
       }
     }
