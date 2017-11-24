@@ -48,10 +48,8 @@ PuppiProducer::PuppiProducer(const edm::ParameterSet& iConfig) {
   tokenVertices_
     = consumes<VertexCollection>(iConfig.getParameter<edm::InputTag>("vertexName"));
  
-  if (fUseTime) {
-    tokenVerticesForTiming_
+  tokenVerticesForTiming_
     = consumes<VertexCollection>(iConfig.getParameter<edm::InputTag>("vertexForTimingName"));
-  }
     
   produces<edm::ValueMap<float> > ();
   produces<edm::ValueMap<LorentzVector> > ();
