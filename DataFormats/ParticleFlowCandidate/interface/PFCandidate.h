@@ -30,6 +30,10 @@
 #include "DataFormats/ParticleFlowCandidate/interface/PFCandidateEGammaExtraFwd.h"
 #include "DataFormats/EgammaCandidates/interface/PhotonFwd.h"
 namespace reco {
+  
+  float hackedTime(float timeOld, float timeErrorOld);
+  float hackedTimeError(float timeErrorOld);
+  
   /**\class PFCandidate
      \brief Particle reconstructed by the particle flow algorithm.
           
@@ -417,9 +421,9 @@ namespace reco {
     /// do we have a valid time information
     bool isTimeValid() const { return timeError_ >= 0.f; }
     /// \return the timing
-    float time() const { return time_; }
+    float time() const;
     /// \return the timing uncertainty
-    float timeError() const { return timeError_; }
+    float timeError() const;
     /// \set the timing information
     void setTime(float time, float timeError = 0.f) { time_ = time; timeError_ = timeError; }
 

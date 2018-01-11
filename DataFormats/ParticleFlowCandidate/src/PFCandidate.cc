@@ -11,6 +11,7 @@
 #include "DataFormats/EgammaCandidates/interface/Photon.h"
 
 #include "FWCore/Utilities/interface/Exception.h"
+#include "TMath.h"
 
 #include <ostream>
 #include <iomanip>
@@ -697,4 +698,39 @@ PFCandidate::elementsInBlocks() const {
       }
     }
   return *(elementsInBlocks_.load(std::memory_order_acquire));
+}
+
+float
+PFCandidate::time() const {
+  return reco::hackedTime(time_, timeError_);
+}
+
+float
+PFCandidate::timeError() const {
+  return reco::hackedTimeError(timeError_);
+}
+
+float reco::hackedTime(float timeOld, float timeErrorOld) {
+  float timeError = reco::hackedTimeError(timeErrorOld);
+  
+  if (timeError <= timeErrorOld) {
+    return timeOld;
+  }
+  
+  float diffquad = std::sqrt(timeError*timeError - timeErrorOld*timeErrorOld);
+  
+  uint32_t timeasint;
+  memcpy(&timeasint, &timeOld, sizeof(uint32_t));
+  uint8_t rndint = std::max(uint32_t(1),timeasint & 0xFF);
+  
+  float flat = static_cast<float>(rndint)/256.;
+  float gaus = std::sqrt(2.)*TMath::ErfInverse(2.*flat-1.);
+  
+  return timeOld + diffquad*gaus;
+}
+
+float reco::hackedTimeError(float timeErrorOld) {
+  constexpr float timeErrorNew = 40e-3;
+  
+  return timeErrorOld > 0. ? timeErrorNew : timeErrorOld;
 }
