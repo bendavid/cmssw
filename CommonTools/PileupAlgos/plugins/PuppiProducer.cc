@@ -21,6 +21,11 @@
 #include "DataFormats/GsfTrackReco/interface/GsfTrack.h"
 #include "DataFormats/GsfTrackReco/interface/GsfTrackFwd.h"
 #include "DataFormats/Common/interface/Association.h"
+
+#include "CLHEP/Random/RandGauss.h"
+#include "FWCore/ServiceRegistry/interface/Service.h"
+#include "FWCore/Utilities/interface/RandomNumberGenerator.h"
+
 //Main File
 #include "fastjet/PseudoJet.hh"
 #include "CommonTools/PileupAlgos/plugins/PuppiProducer.h"
@@ -67,6 +72,14 @@ PuppiProducer::PuppiProducer(const edm::ParameterSet& iConfig) {
     produces<std::vector<double>> ("PuppiAlphasMed");
     produces<std::vector<double>> ("PuppiAlphasRms");
   }
+  
+  // get RNG engine
+  edm::Service<edm::RandomNumberGenerator> rng;
+  if (!rng.isAvailable()){
+    throw cms::Exception("Configuration")
+      << "TrackTimeValueMapProducer::TrackTimeValueMapProducer() - RandomNumberGeneratorService is not present in configuration file.\n"
+      << "Add the service in the configuration file or remove the modules that require it.";
+  }
 }
 // ------------------------------------------------------------------------------------------
 PuppiProducer::~PuppiProducer(){
@@ -74,6 +87,10 @@ PuppiProducer::~PuppiProducer(){
 // ------------------------------------------------------------------------------------------
 void PuppiProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) {
 
+  edm::Service<edm::RandomNumberGenerator> rng;  
+  auto rng_engine = &(rng->getEngine(iEvent.streamID()));  
+  constexpr float newTimeErr = 60e-3;
+  
   // Get PFCandidate Collection
   edm::Handle<CandidateView> hPFProduct;
   iEvent.getByToken(tokenPFCandidates_,hPFProduct);
@@ -163,8 +180,15 @@ void PuppiProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) {
           if (fPuppiForLeptons && tmpFromPV == 2) pReco.id = 1;
         }
         bool usetime = fUseTime && pPF->isTimeValid() && pvForTiming0.tError()>0.;
-        float tErr = std::sqrt(pPF->timeError()*pPF->timeError() + pvForTiming0.tError()*pvForTiming0.tError());
-        if (usetime && std::abs(pPF->time()-pvForTiming0.t())/tErr>fDTSigCut) {
+        float time = pPF->time();
+        float timeErr = pPF->timeError();
+        if (usetime && timeErr<newTimeErr) {
+          timeErr = newTimeErr;
+          float diffquad = std::sqrt(newTimeErr*newTimeErr - timeErr*timeErr);
+          time = CLHEP::RandGauss::shoot(rng_engine, time, diffquad);
+        }        
+        float tErr = std::sqrt(timeErr*timeErr + pvForTiming0.tError()*pvForTiming0.tError());
+        if (usetime && std::abs(time-pvForTiming0.t())/tErr>fDTSigCut) {
           pReco.id = 2;
         }
       }
@@ -188,8 +212,15 @@ void PuppiProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) {
           if (fPuppiForLeptons && lPack->fromPV() == (pat::PackedCandidate::PVTight)) pReco.id = 1;
         }
         bool usetime = fUseTime && lPack->timeError()>0. && pvForTiming0.tError()>0.;
-        float tErr = std::sqrt(lPack->timeError()*lPack->timeError() + pvForTiming0.tError()*pvForTiming0.tError());
-        if (usetime && std::abs(lPack->time()-pvForTiming0.t())/tErr>fDTSigCut) {
+        float time = lPack->time();
+        float timeErr = lPack->timeError();
+        if (usetime && timeErr<newTimeErr) {
+          timeErr = newTimeErr;
+          float diffquad = std::sqrt(newTimeErr*newTimeErr - timeErr*timeErr);
+          time = CLHEP::RandGauss::shoot(rng_engine, time, diffquad);
+        }
+        float tErr = std::sqrt(timeErr*timeErr + pvForTiming0.tError()*pvForTiming0.tError());
+        if (usetime && std::abs(time-pvForTiming0.t())/tErr>fDTSigCut) {
           pReco.id = 2;
         }
       }
