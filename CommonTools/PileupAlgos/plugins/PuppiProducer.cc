@@ -89,7 +89,6 @@ void PuppiProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) {
 
   edm::Service<edm::RandomNumberGenerator> rng;  
   auto rng_engine = &(rng->getEngine(iEvent.streamID()));  
-  constexpr float newTimeErr = 60e-3;
   
   // Get PFCandidate Collection
   edm::Handle<CandidateView> hPFProduct;
@@ -179,14 +178,16 @@ void PuppiProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) {
           if (fPuppiForLeptons && tmpFromPV == 1) pReco.id = 2;
           if (fPuppiForLeptons && tmpFromPV == 2) pReco.id = 1;
         }
-        bool usetime = fUseTime && pPF->isTimeValid() && pvForTiming0.tError()>0.;
+        bool validtime = pPF->isTimeValid() && (std::abs(pPF->eta())<1.5 || pPF->pt()>2.);
+        float newTimeErr = validtime ? pPF->timeError() : -1.;
+        bool usetime = fUseTime && newTimeErr>0. && pvForTiming0.tError()>0.;
         float time = pPF->time();
         float timeErr = pPF->timeError();
         if (usetime && timeErr<newTimeErr) {
           timeErr = newTimeErr;
           float diffquad = std::sqrt(newTimeErr*newTimeErr - timeErr*timeErr);
           time = CLHEP::RandGauss::shoot(rng_engine, time, diffquad);
-        }        
+        }      
         float tErr = std::sqrt(timeErr*timeErr + pvForTiming0.tError()*pvForTiming0.tError());
         if (usetime && std::abs(time-pvForTiming0.t())/tErr>fDTSigCut) {
           pReco.id = 2;
@@ -214,11 +215,6 @@ void PuppiProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) {
         bool usetime = fUseTime && lPack->timeError()>0. && pvForTiming0.tError()>0.;
         float time = lPack->time();
         float timeErr = lPack->timeError();
-        if (usetime && timeErr<newTimeErr) {
-          timeErr = newTimeErr;
-          float diffquad = std::sqrt(newTimeErr*newTimeErr - timeErr*timeErr);
-          time = CLHEP::RandGauss::shoot(rng_engine, time, diffquad);
-        }
         float tErr = std::sqrt(timeErr*timeErr + pvForTiming0.tError()*pvForTiming0.tError());
         if (usetime && std::abs(time-pvForTiming0.t())/tErr>fDTSigCut) {
           pReco.id = 2;
