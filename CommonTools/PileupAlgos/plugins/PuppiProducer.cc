@@ -23,6 +23,7 @@
 #include "DataFormats/Common/interface/Association.h"
 
 #include "CLHEP/Random/RandGauss.h"
+#include "CLHEP/Random/RandFlat.h"
 #include "FWCore/ServiceRegistry/interface/Service.h"
 #include "FWCore/Utilities/interface/RandomNumberGenerator.h"
 
@@ -178,8 +179,20 @@ void PuppiProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) {
           if (fPuppiForLeptons && tmpFromPV == 1) pReco.id = 2;
           if (fPuppiForLeptons && tmpFromPV == 2) pReco.id = 1;
         }
-        bool validtime = pPF->isTimeValid() && (std::abs(pPF->eta())<1.5 || pPF->pt()>2.);
-        float newTimeErr = validtime ? pPF->timeError() : -1.;
+        float timeeff=0.;
+        float newTimeErr = pPF->timeError();
+        if (std::abs(pPF->eta())<1.5 || pPF->pt()>10.) {
+          timeeff = 1.;
+        }
+        else if (pPF->pt()>0.5) {
+          timeeff = 1. - exp(-(pPF->pt()-0.2)/1.4);
+          float timesmear = 1e-3*std::sqrt(3000./pPF->pt());
+          newTimeErr = std::sqrt(timesmear*timesmear + pPF->timeError()*pPF->timeError());
+        }
+        float effrnd = CLHEP::RandFlat::shoot(rng_engine);
+        if (timeeff < effrnd) {
+          newTimeErr = -1.;
+        }
         bool usetime = fUseTime && newTimeErr>0. && pvForTiming0.tError()>0.;
         float time = pPF->time();
         float timeErr = pPF->timeError();
