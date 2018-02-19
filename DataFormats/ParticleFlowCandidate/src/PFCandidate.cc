@@ -721,5 +721,5 @@ float reco::hackedTime(float timeOld, float timeErrorOld, float eta) {
 }
 
 float reco::hackedTimeError(float timeErrorOld, float eta) {  
-  return std::abs(eta)<1.5 ? timeErrorOld : -1.;
+  return std::abs(eta)>1.5 ? timeErrorOld : -1.;
 }
