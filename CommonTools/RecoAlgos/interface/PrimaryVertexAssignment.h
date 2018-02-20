@@ -82,8 +82,10 @@ class PrimaryVertexAssignment {
                                    const TransientTrackBuilder& builder) const {
       float time = 0, timeResolution = -1;
       if (useTiming_) {
-        time = (*trackTimeTag)[chcand.track()];
-        timeResolution = (*trackTimeResoTag)[chcand.track()]; 
+        float timeOld = (*trackTimeTag)[chcand.track()];
+        float timeResolutionOld = (*trackTimeResoTag)[chcand.track()]; 
+        time = reco::hackedTime(timeOld, timeResolutionOld, chcand.track()->eta());
+        timeResolution = reco::hackedTimeError(timeResolutionOld, chcand.track()->eta());
       }
       if(chcand.track().isNull())
          return std::pair<int,PrimaryVertexAssignment::Quality>(-1,PrimaryVertexAssignment::Unassigned);
