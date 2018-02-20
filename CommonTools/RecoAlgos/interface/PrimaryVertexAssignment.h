@@ -84,8 +84,8 @@ class PrimaryVertexAssignment {
       if (useTiming_) {
         float timeOld = (*trackTimeTag)[chcand.track()];
         float timeResolutionOld = (*trackTimeResoTag)[chcand.track()]; 
-        time = reco::hackedTime(timeOld, timeResolutionOld, chcand.track()->eta());
-        timeResolution = reco::hackedTimeError(timeResolutionOld, chcand.track()->eta());
+        time = reco::hackedTime(timeOld, timeResolutionOld, chcand.track()->pt(), chcand.track()->eta());
+        timeResolution = reco::hackedTimeError(timeResolutionOld, chcand.track()->pt(), chcand.track()->eta());
       }
       if(chcand.track().isNull())
          return std::pair<int,PrimaryVertexAssignment::Quality>(-1,PrimaryVertexAssignment::Unassigned);

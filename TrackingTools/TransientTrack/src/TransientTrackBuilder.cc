@@ -117,8 +117,8 @@ TransientTrackBuilder::build ( const edm::Handle<reco::TrackCollection> & trkCol
     TrackRef ref(trkColl, i);
     double timeOld = trackTimes[ref];
     double timeResoOld = trackTimeResos[ref];
-    double time = reco::hackedTime(timeOld, timeResoOld, ref->eta());
-    double timeReso = reco::hackedTimeError(timeResoOld, ref->eta());
+    double time = reco::hackedTime(timeOld, timeResoOld, ref->pt(), ref->eta());
+    double timeReso = reco::hackedTimeError(timeResoOld, ref->pt(), ref->eta());
     timeReso = ( timeReso > 1e-6 ? timeReso : defaultInvalidTrackReso ); // make the error much larger than the BS time width
     if( edm::isNotFinite(time) ) {
       time = 0.0;
@@ -140,8 +140,8 @@ TransientTrackBuilder::build (const edm::Handle<reco::GsfTrackCollection> & trkC
     GsfTrackRef ref(trkColl, i);
     double timeOld = trackTimes[ref];
     double timeResoOld = trackTimeResos[ref];
-    double time = reco::hackedTime(timeOld, timeResoOld, ref->eta());
-    double timeReso = reco::hackedTimeError(timeResoOld, ref->eta());
+    double time = reco::hackedTime(timeOld, timeResoOld, ref->pt(), ref->eta());
+    double timeReso = reco::hackedTimeError(timeResoOld, ref->pt(), ref->eta());
     timeReso = ( timeReso > 1e-6 ? timeReso : defaultInvalidTrackReso ); // make the error much larger than the BS time width
     if( edm::isNotFinite(time) ) {
       time = 0.0;
@@ -167,8 +167,8 @@ TransientTrackBuilder::build (const edm::Handle<edm::View<Track> > & trkColl,
       GsfTrackRef ref = RefToBase<Track>(trkColl, i).castTo<GsfTrackRef>();
     double timeOld = trackTimes[ref];
     double timeResoOld = trackTimeResos[ref];
-    double time = reco::hackedTime(timeOld, timeResoOld, ref->eta());
-    double timeReso = reco::hackedTimeError(timeResoOld, ref->eta());
+    double time = reco::hackedTime(timeOld, timeResoOld, ref->pt(), ref->eta());
+    double timeReso = reco::hackedTimeError(timeResoOld, ref->pt(), ref->eta());
       timeReso = ( timeReso > 1e-6 ? timeReso : defaultInvalidTrackReso ); // make the error much larger than the BS time width
       if( edm::isNotFinite(time) ) {
 	time = 0.0;
@@ -180,8 +180,8 @@ TransientTrackBuilder::build (const edm::Handle<edm::View<Track> > & trkColl,
       TrackRef ref = RefToBase<Track>(trkColl, i).castTo<TrackRef>();
     double timeOld = trackTimes[ref];
     double timeResoOld = trackTimeResos[ref];
-    double time = reco::hackedTime(timeOld, timeResoOld, ref->eta());
-    double timeReso = reco::hackedTimeError(timeResoOld, ref->eta());
+    double time = reco::hackedTime(timeOld, timeResoOld, ref->pt(), ref->eta());
+    double timeReso = reco::hackedTimeError(timeResoOld, ref->pt(), ref->eta());
       timeReso = ( timeReso > 1e-6 ? timeReso : defaultInvalidTrackReso ); // make the error much larger than the BS time width
       if( edm::isNotFinite(time) ) {
 	time = 0.0;

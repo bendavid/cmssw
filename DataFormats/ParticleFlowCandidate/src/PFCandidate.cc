@@ -702,16 +702,16 @@ PFCandidate::elementsInBlocks() const {
 
 float
 PFCandidate::time() const {
-  return reco::hackedTime(time_, timeError_,eta());
+  return reco::hackedTime(time_, timeError_,pt(), eta());
 }
 
 float
 PFCandidate::timeError() const {
-  return reco::hackedTimeError(timeError_, eta());
+  return reco::hackedTimeError(timeError_, pt(), eta());
 }
 
-float reco::hackedTime(float timeOld, float timeErrorOld, float eta) {
-  float timeError = reco::hackedTimeError(timeErrorOld, eta);
+float reco::hackedTime(float timeOld, float timeErrorOld, float pt, float eta) {
+  float timeError = reco::hackedTimeError(timeErrorOld, pt, eta);
   if (timeError > 0.) {
     return timeOld;
   }
@@ -720,6 +720,6 @@ float reco::hackedTime(float timeOld, float timeErrorOld, float eta) {
   }
 }
 
-float reco::hackedTimeError(float timeErrorOld, float eta) {  
-  return std::abs(eta)>1.5 ? timeErrorOld : -1.;
+float reco::hackedTimeError(float timeErrorOld, float pt, float eta) {  
+  return std::abs(eta)>1.5 && pt>2. ? timeErrorOld : -1.;
 }

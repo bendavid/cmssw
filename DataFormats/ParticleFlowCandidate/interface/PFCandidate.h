@@ -31,8 +31,8 @@
 #include "DataFormats/EgammaCandidates/interface/PhotonFwd.h"
 namespace reco {
   
-  float hackedTime(float timeOld, float timeErrorOld, float eta);
-  float hackedTimeError(float timeErrorOld, float eta);
+  float hackedTime(float timeOld, float timeErrorOld, float pt, float eta);
+  float hackedTimeError(float timeErrorOld, float pt, float eta);
   
   /**\class PFCandidate
      \brief Particle reconstructed by the particle flow algorithm.
