@@ -125,8 +125,8 @@ void BTLElectronicsSim::run(const mtd::MTDSimHitDataAccumulator& input,
     }
 
     //run the shaper to create a new data frame
-    BTLDataFrame rawDataFrame( it->first );    
-    runTrivialShaper(rawDataFrame,chargeColl,toa1,toa2);
+    BTLDataFrame rawDataFrame( it->first.detid_ );    
+    runTrivialShaper(rawDataFrame,chargeColl,toa1,toa2,it->first.row_, it->first.column_);
     updateOutput(output,rawDataFrame);
     
   }
@@ -137,7 +137,8 @@ void BTLElectronicsSim::run(const mtd::MTDSimHitDataAccumulator& input,
 void BTLElectronicsSim::runTrivialShaper(BTLDataFrame &dataFrame, 
 					 const mtd::MTDSimHitData& chargeColl,
 					 const mtd::MTDSimHitData& toa1,
-					 const mtd::MTDSimHitData& toa2) const {
+					 const mtd::MTDSimHitData& toa2,
+					 const uint8_t row, const uint8_t col) const {
     bool debug = debug_;
 #ifdef EDM_ML_DEBUG  
   for(int it=0; it<(int)(chargeColl.size()); it++) debug |= (chargeColl[it]>adcThreshold_fC_);
@@ -147,20 +148,23 @@ void BTLElectronicsSim::runTrivialShaper(BTLDataFrame &dataFrame,
   
   //set new ADCs 
   for(int it=0; it<(int)(chargeColl.size()); it++) {
-
-    if ( chargeColl[it] == 0. ) continue;
+    
+    BTLSample newSample;
+    newSample.set(0,0,0,0,0,row,col);    
+    
+    if ( chargeColl[it] != 0. ) { 
 
     //brute force saturation, maybe could to better with an exponential like saturation      
     const uint32_t adc=std::floor( std::min(chargeColl[it],adcSaturation_MIP_) / adcLSB_MIP_ );
     const uint32_t tdc_time1=std::floor( toa1[it] / toaLSB_ns_ );
     const uint32_t tdc_time2=std::floor( toa2[it] / toaLSB_ns_ );
-    BTLSample newSample;
-    newSample.set(chargeColl[it] > adcThreshold_MIP_,false,tdc_time2,tdc_time1,adc);
-    dataFrame.setSample(it,newSample);
+    newSample.set(chargeColl[it] > adcThreshold_MIP_,false,tdc_time2,tdc_time1,adc,row,col);
 
     if(debug) edm::LogVerbatim("BTLElectronicsSim") << adc << " (" 
 						    << chargeColl[it] << "/" 
 						    << adcLSB_MIP_ << ") ";
+    }
+    dataFrame.setSample(it,newSample);
   }
 
   if(debug) { 
