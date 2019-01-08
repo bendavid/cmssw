@@ -498,7 +498,7 @@ reco::Track TrackExtenderWithMTDT<TrackCollection>::buildTrack(const reco::Track
       pathLengthOut = pathlength; // set path length if we've got a timing hit
       t0 = thit - dt;
       covt0t0 = thiterror*thiterror;
-      beta = betaOut;
+      betaOut = beta;
     }
   }
   
