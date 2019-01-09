@@ -531,6 +531,12 @@ reco::Track TrackExtenderWithMTDT<TrackCollection>::buildTrack(const reco::Track
           const MTDTrackingRecHit *mtdhit = static_cast<const MTDTrackingRecHit*>(it->recHit()->hit());
           thit = mtdhit->time();
           thiterror = mtdhit->timeError();
+          //*FIXME* temporary hack for BTL time offset
+          MTDDetId mtdid(it->recHit()->geographicalId());
+          bool isbtl = mtdid.mtdSubDetector() == MTDDetId::BTL;
+          if (isbtl) {
+            thit -= 0.21;
+          }
           validmtd = true;
           break;          
         }
@@ -549,6 +555,12 @@ reco::Track TrackExtenderWithMTDT<TrackCollection>::buildTrack(const reco::Track
           const MTDTrackingRecHit *mtdhit = static_cast<const MTDTrackingRecHit*>(it->recHit()->hit());
           thit = mtdhit->time();
           thiterror = mtdhit->timeError();
+          //*FIXME* temporary hack for BTL time offset
+          MTDDetId mtdid(it->recHit()->geographicalId());
+          bool isbtl = mtdid.mtdSubDetector() == MTDDetId::BTL;
+          if (isbtl) {
+            thit -= 0.21;
+          }
           validmtd = true;
           break;          
         }
