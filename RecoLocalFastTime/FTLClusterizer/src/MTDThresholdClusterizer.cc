@@ -80,7 +80,7 @@ bool MTDThresholdClusterizer::setup(const MTDGeometry* geom, const MTDTopology* 
        ncols > theBuffer.columns() ) 
     { // change only when a larger is needed
       // Resize the buffer
-      theBuffer.setSize(nrows,ncols);  // Modify
+      theBuffer.setSize(nrows+1,ncols+1);  // +1 needed for MTD
       bufferAlreadySet = true;
     }
   
