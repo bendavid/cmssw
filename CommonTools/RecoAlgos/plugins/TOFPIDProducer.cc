@@ -155,7 +155,7 @@ void TOFPIDProducer::produce( edm::Event& ev,
           mindz = dz;
           vtxidxmindz = ivtx;
         }
-        if (vtx.tError()>0.) {
+        if (vtx.tError()>0. && vtx.tError()<0.5*sqrt(2.)*sigmat0) {
           double dt = std::abs(t0-vtx.t());
           double chisq = dz*dz*rsigmazsq + dt*dt*rsigmat0sq;
           if (chisq<minchisq) {
@@ -169,7 +169,7 @@ void TOFPIDProducer::produce( edm::Event& ev,
       if (vtxidx<0) {
         //if closest vertex in z has time information, use the closest vertex in z-t plane with timing info,
         //otherwise just use the closest in z
-        if (vtxs[vtxidxmindz].tError()>0.) {
+        if (vtxs[vtxidxmindz].tError()>0. && vtxs[vtxidxmindz].tError()<0.5*sqrt(2.)*sigmat0) {
           vtxidx = vtxidxminchisq;
         }
         else {
@@ -178,7 +178,7 @@ void TOFPIDProducer::produce( edm::Event& ev,
       }
       
       //testing mass hypotheses only possible if there is an associated vertex with time information
-      if (vtxidx>=0 && vtxs[vtxidx].tError()>0.) {        
+      if (vtxidx>=0 && vtxs[vtxidx].tError()>0. && vtxs[vtxidx].tError()<0.5*sqrt(2.)*sigmat0) {        
         //compute chisq in z-t plane for nominal vertex and mass hypothesis (pion)
         const reco::Vertex &vtxnom = vtxs[vtxidx];
         double dznom = std::abs(track.dz(vtxnom.position()));
@@ -205,7 +205,7 @@ void TOFPIDProducer::produce( edm::Event& ev,
         double chisqmin_p = std::numeric_limits<double>::max();
         //loop through vertices and check for better matches
         for (const reco::Vertex &vtx : vtxs) {
-          if (!(vtx.tError()>0.)) {
+          if (!(vtx.tError()>0. && vtx.tError()<0.5*sqrt(2.)*sigmat0)) {
             continue;
           }
           
@@ -239,9 +239,9 @@ void TOFPIDProducer::produce( edm::Event& ev,
         
         //compute PID probabilities
         //*TODO* deal with heavier nucleons and/or BSM case here?
-        double rawprob_pi = exp(-chisqmin_pi);
-        double rawprob_k = exp(-chisqmin_k);
-        double rawprob_p = exp(-chisqmin_p);
+        double rawprob_pi = exp(-0.5*chisqmin_pi);
+        double rawprob_k = exp(-0.5*chisqmin_k);
+        double rawprob_p = exp(-0.5*chisqmin_p);
         
         double normprob = 1./(rawprob_pi + rawprob_k + rawprob_p);
         
