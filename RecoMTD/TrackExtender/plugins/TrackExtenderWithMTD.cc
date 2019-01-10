@@ -472,7 +472,6 @@ reco::Track TrackExtenderWithMTDT<TrackCollection>::buildTrack(const reco::Track
   }
 
   constexpr double mpi = 0.13957018; //[GeV]
-  constexpr double mp = 0.9382720813; //[GeV]
   constexpr double c = 2.99792458e1; //[cm/ns]
   
   const FreeTrajectoryState & stateForProjectionToBeamLine=*stateForProjectionToBeamLineOnSurface.freeState();
@@ -571,24 +570,16 @@ reco::Track TrackExtenderWithMTDT<TrackCollection>::buildTrack(const reco::Track
       
       double magp = p.mag();
 
-      double gammasq_pi = 1. + magp*magp/mpi/mpi;
-      double beta_pi = std::sqrt(1.-1./gammasq_pi);
-      double dt_pi = pathlength/beta_pi/c;
-      
-      double gammasq_p = 1. + magp*magp/mp/mp;
-      double beta_p = std::sqrt(1.-1./gammasq_p);
-      double dt_p = pathlength/beta_p/c;
-      
-      double dterror = dt_p - dt_pi;
-      double betaerror = beta_p - beta_pi;
-      
+      double gammasq = 1. + magp*magp/mpi/mpi;
+      double beta = std::sqrt(1.-1./gammasq);
+      double dt = pathlength/beta/c;
+            
       pathLengthOut = pathlength; // set path length if we've got a timing hit
       tmtdOut = thit;
       sigmatmtdOut = thiterror;
-      t0 = thit - dt_pi;
-      covt0t0 = thiterror*thiterror + dterror*dterror;
-      betaOut = beta_pi;
-      covbetabeta  = betaerror*betaerror;
+      t0 = thit - dt;
+      covt0t0 = thiterror*thiterror;
+      betaOut = beta;
     }
   }
   
@@ -596,7 +587,7 @@ reco::Track TrackExtenderWithMTDT<TrackCollection>::buildTrack(const reco::Track
 		     int(ndof),
 		     pos, mom, tscbl.trackStateAtPCA().charge(), 
 		     tscbl.trackStateAtPCA().curvilinearError(),
-		     orig.algo(),reco::TrackBase::undefQuality,t0,betaOut,covt0t0,covbetabeta);
+		     orig.algo(),reco::TrackBase::undefQuality,t0,betaOut,covt0t0,0.);
 }
 
 template<class TrackCollection>
