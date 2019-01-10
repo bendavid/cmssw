@@ -131,7 +131,7 @@ void TOFPIDProducer::produce( edm::Event& ev,
     float prob_k = -1.;
     float prob_p = -1.;
     
-    if (sigmat0>0) {
+    if (sigmat0>0.) {
       
       double rsigmazsq = 1./track.dzError()/track.dzError();
       double rsigmat0sq = 1./sigmat0/sigmat0;
@@ -213,14 +213,14 @@ void TOFPIDProducer::produce( edm::Event& ev,
           double chisqdz = dz*dz*rsigmazsq;
           
           double dt_k = std::abs(t0_k - vtx.t());
-          double chisq_k = dt_k*dt_k*rsigmat0sq;
+          double chisq_k = chisqdz + dt_k*dt_k*rsigmat0sq;
           
           if (chisq_k<chisqmin_k) {
             chisqmin_k = chisq_k;
           }
           
           double dt_p = std::abs(t0_p - vtx.t());
-          double chisq_p = dt_p*dt_p*rsigmat0sq;
+          double chisq_p = chisqdz + dt_p*dt_p*rsigmat0sq;
           
           if (chisq_p<chisqmin_p) {
             chisqmin_p = chisq_p;
