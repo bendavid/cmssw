@@ -105,9 +105,7 @@ void BTLBarDeviceSim::getHitsResponse(const std::vector<std::tuple<int,uint32_t,
     double distL = 0.5*topo.pitch().second + 0.1*hit.localPosition().y();
     
     // This is for the layout with bars along phi
-    if ( topo_->getMTDTopologyMode() == (int) BTLDetId::CrysLayout::bar ||
-	 topo_->getMTDTopologyMode() == (int) BTLDetId::CrysLayout::barphiflat 
-	 )
+    if ( topo_->getMTDTopologyMode() == (int) BTLDetId::CrysLayout::bar )
       {
 	distR = 0.5*topo.pitch().first - 0.1*hit.localPosition().x();
 	distL = 0.5*topo.pitch().first + 0.1*hit.localPosition().x();
