@@ -37,13 +37,19 @@ RecoMuonAOD = cms.PSet(
                                            #'drop recoIsoDepositedmValueMap_muons_*_*', #not really used
                                            #'drop doubleedmValueMap_muons_muPFIso*_*', #already inside the muon
                                            # Tracks known by the Muon obj
+                                           'keep *_thinnedGeneralTracks_*_*',
                                            'keep recoTracks_standAloneMuons_*_*',
                                            'keep recoTrackExtras_standAloneMuons_*_*',
+                                           'keep *_thinnedStandAloneMuons_*_*',
                                            'keep TrackingRecHitsOwned_standAloneMuons_*_*',
                                            'keep recoTracks_globalMuons_*_*',
                                            'keep recoTrackExtras_globalMuons_*_*',
+                                           'keep *_thinnedGlobalMuons_*_*',
                                            'keep recoTracks_tevMuons_*_*',
                                            'keep recoTrackExtras_tevMuons_*_*',
+                                           'keep *_thinnedTevMuonsFirstHit_*_*',
+                                           'keep *_thinnedTevMuonsPicky_*_*',
+                                           'keep *_thinnedTevMuonsDyt_*_*',
                                            'keep recoTracks_generalTracks_*_*',
                                            'keep recoTracks_displacedTracks_*_*',
                                            'keep recoTracksToOnerecoTracksAssociation_tevMuons_*_*',
