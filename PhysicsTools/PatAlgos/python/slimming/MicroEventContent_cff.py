@@ -84,6 +84,13 @@ MicroEventContent = cms.PSet(
 	'keep recoTracks_displacedStandAloneMuons__*',
         # L1 prefiring weights
         'keep *_prefiringweight_*_*',
+        
+        'keep *_slimmedGeneralTracks_*_*',
+        'keep *_slimmedStandAloneMuons_*_*',
+        'keep *_slimmedGlobalMuons_*_*',
+        'keep *_slimmedTevMuonsFirstHit_*_*',
+        'keep *_slimmedTevMuonsPicky_*_*',
+        'keep *_slimmedTevMuonsDyt_*_*',
     )
 )
 

@@ -16,6 +16,7 @@ from PhysicsTools.PatAlgos.slimming.slimmedElectrons_cfi import *
 from PhysicsTools.PatAlgos.slimming.slimmedLowPtElectrons_cfi import *
 from PhysicsTools.PatAlgos.slimming.lowPtGsfLinks_cfi import *
 from PhysicsTools.PatAlgos.slimming.slimmedMuons_cfi     import *
+from PhysicsTools.PatAlgos.slimming.slimmedTrackExtras_cff     import *
 from PhysicsTools.PatAlgos.slimming.slimmedPhotons_cfi   import *
 from PhysicsTools.PatAlgos.slimming.slimmedOOTPhotons_cff import *
 from PhysicsTools.PatAlgos.slimming.slimmedTaus_cfi      import *
@@ -46,6 +47,7 @@ slimmingTask = cms.Task(
     slimmedLowPtElectrons,
     lowPtGsfLinks,
     slimmedMuons,
+    slimmedTrackExtrasTask,
     slimmedPhotons,
     slimmedOOTPhotons,
     slimmedTaus,
