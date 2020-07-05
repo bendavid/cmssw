@@ -42,7 +42,8 @@ namespace edm {
 
   template <typename Collection, typename Selector>
   ThinningProducer<Collection, Selector>::ThinningProducer(ParameterSet const& pset)
-      : ThinningProducerBase<Collection>(pset), selector_(new Selector(pset, ThinningProducerBase<Collection>::consumesCollector())) {}
+      : ThinningProducerBase<Collection>(pset),
+        selector_(new Selector(pset, ThinningProducerBase<Collection>::consumesCollector())) {}
 
   template <typename Collection, typename Selector>
   ThinningProducer<Collection, Selector>::~ThinningProducer() {}
@@ -73,7 +74,8 @@ namespace edm {
         thinnedAssociation.push_back(iIndex);
       }
     }
-    OrphanHandle<Collection> orphanHandle = event.emplace(ThinningProducerBase<Collection>::outputToken_, std::move(thinnedCollection));
+    OrphanHandle<Collection> orphanHandle =
+        event.emplace(ThinningProducerBase<Collection>::outputToken_, std::move(thinnedCollection));
 
     thinnedAssociation.setParentCollectionID(inputCollection.id());
     thinnedAssociation.setThinnedCollectionID(orphanHandle.id());

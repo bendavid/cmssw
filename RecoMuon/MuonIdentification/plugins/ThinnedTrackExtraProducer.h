@@ -21,11 +21,9 @@
 
 #include "FWCore/Framework/interface/stream/ThinningProducerBase.h"
 
-
 typedef edm::ThinningProducerBase<reco::TrackExtraCollection> ThinnedTrackExtraProducerBase;
 
 class ThinnedTrackExtraProducer : public ThinnedTrackExtraProducerBase {
-
 public:
   /// Constructor
   ThinnedTrackExtraProducer(const edm::ParameterSet&);
