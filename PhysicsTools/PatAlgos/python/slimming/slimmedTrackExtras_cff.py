@@ -9,34 +9,19 @@ slimmedGeneralTracks = thinnedGeneralTracks.clone(inputTag = "thinnedGeneralTrac
                                                   cut = "",
                                                   )
 
-slimmedStandAloneMuons = thinnedGeneralTracks.clone(inputTag = "thinnedStandAloneMuons",
-                                                  isInputThinned = True,
-                                                  muonTag = "slimmedMuons",
-                                                  cut = "",
+slimmedStandAloneMuons = slimmedGeneralTracks.clone(inputTag = "thinnedStandAloneMuons",
                                                   )
 
-slimmedGlobalMuons = thinnedGeneralTracks.clone(inputTag = "thinnedGlobalMuons",
-                                                  isInputThinned = True,
-                                                  muonTag = "slimmedMuons",
-                                                  cut = "",
+slimmedGlobalMuons = slimmedGeneralTracks.clone(inputTag = "thinnedGlobalMuons",
                                                   )
 
-slimmedTevMuonsFirstHit = thinnedGeneralTracks.clone(inputTag = "thinnedTevMuonsFirstHit",
-                                                  isInputThinned = True,
-                                                  muonTag = "slimmedMuons",
-                                                  cut = "",
+slimmedTevMuonsFirstHit = slimmedGeneralTracks.clone(inputTag = "thinnedTevMuonsFirstHit",
                                                   )
 
-slimmedTevMuonsPicky = thinnedGeneralTracks.clone(inputTag = "thinnedTevMuonsPicky",
-                                                  isInputThinned = True,
-                                                  muonTag = "slimmedMuons",
-                                                  cut = "",
+slimmedTevMuonsPicky = slimmedGeneralTracks.clone(inputTag = "thinnedTevMuonsPicky",
                                                   )
 
-slimmedTevMuonsDyt = thinnedGeneralTracks.clone(inputTag = "thinnedTevMuonsDyt",
-                                                  isInputThinned = True,
-                                                  muonTag = "slimmedMuons",
-                                                  cut = "",
+slimmedTevMuonsDyt = slimmedGeneralTracks.clone(inputTag = "thinnedTevMuonsDyt",
                                                   )
 
 slimmedTrackExtrasTask = cms.Task(slimmedGeneralTracks,
