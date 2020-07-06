@@ -35,7 +35,7 @@ void ThinnedTrackExtraProducer::fillDescriptions(edm::ConfigurationDescriptions&
   desc.add<std::string>("cut", "pt > 3. || isPFMuon");
   desc.add<bool>("storeHits", true);
   desc.add<bool>("isInputThinned", false);
-  desc.add<bool>("skipMissingInput",false);
+  desc.add<bool>("skipMissingInput", false);
   desc.add<edm::InputTag>("muonTag", edm::InputTag("muons"));
   descriptions.add("thinnedGeneralTracks", desc);
 }
@@ -75,7 +75,7 @@ void ThinnedTrackExtraProducer::produce(edm::Event& event, const edm::EventSetup
       trackExtraRefSet.emplace(trackExtraRef.id(), trackExtraRef.key());
     }
   }
-  
+
   // Build thinned collection for selected TrackExtras and fill additional output collection
   // of TrackingRecHits if necessary
   if (!skipMissingInput_ || inputCollection.isValid()) {
@@ -102,17 +102,17 @@ void ThinnedTrackExtraProducer::produce(edm::Event& event, const edm::EventSetup
         // use explicit TrackExtra constructor here because it is otherwise
         // not possible to reset the hits after the fact
         thinnedCollection.emplace_back(it->outerPosition(),
-                                      it->outerMomentum(),
-                                      it->outerOk(),
-                                      it->innerPosition(),
-                                      it->innerMomentum(),
-                                      it->innerOk(),
-                                      it->outerStateCovariance(),
-                                      it->outerDetId(),
-                                      it->innerStateCovariance(),
-                                      it->innerDetId(),
-                                      it->seedDirection(),
-                                      it->seedRef());
+                                       it->outerMomentum(),
+                                       it->outerOk(),
+                                       it->innerPosition(),
+                                       it->innerMomentum(),
+                                       it->innerOk(),
+                                       it->outerStateCovariance(),
+                                       it->outerDetId(),
+                                       it->innerStateCovariance(),
+                                       it->innerDetId(),
+                                       it->seedDirection(),
+                                       it->seedRef());
         thinnedAssociation.push_back(idx);
 
         if (storeHits_) {
