@@ -61,8 +61,18 @@ slimmingTask = cms.Task(
     oniaPhotonCandidates
 )
 
+from Configuration.Eras.Modifier_run2_miniAOD_94XFall17_cff import run2_miniAOD_94XFall17
+run2_miniAOD_94XFall17.toReplaceWith(slimmingTask, slimmingTask.copyAndExclude([slimmedTrackExtrasTask]))
+
+from Configuration.Eras.Modifier_run2_miniAOD_80XLegacy_cff import run2_miniAOD_80XLegacy
+run2_miniAOD_80XLegacy.toReplaceWith(slimmingTask, slimmingTask.copyAndExclude([slimmedTrackExtrasTask]))
+
+#TODO a proper modifier should be introduced for Run 2 UL reminiaod
+from Configuration.Eras.Modifier_run2_common_cff import run2_common
+run2_common.toReplaceWith(slimmingTask, slimmingTask.copyAndExclude([slimmedTrackExtrasTask]))
+
 from Configuration.Eras.Modifier_pp_on_AA_2018_cff import pp_on_AA_2018
-pp_on_AA_2018.toReplaceWith(slimmingTask, slimmingTask.copyAndExclude([slimmedOOTPhotons]))
+pp_on_AA_2018.toReplaceWith(slimmingTask, slimmingTask.copyAndExclude([slimmedOOTPhotons,slimmedTrackExtrasTask]))
 
 from Configuration.Eras.Modifier_phase2_timing_cff import phase2_timing
 _phase2_timing_slimmingTask = cms.Task(slimmingTask.copy(),
