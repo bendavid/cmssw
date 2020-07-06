@@ -38,6 +38,7 @@ private:
   std::string cut_;
   bool storeHits_;
   bool isInputThinned_;
+  bool skipMissingInput_;
   edm::EDGetTokenT<edm::View<reco::Muon> > muonToken_;
   edm::EDPutTokenT<TrackingRecHitCollection> hitsToken_;
   StringCutObjectSelector<reco::Muon> selector_;
