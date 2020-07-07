@@ -16,6 +16,8 @@
 
 #include "DataFormats/TrackingRecHit/interface/TrackingRecHitFwd.h"
 #include "DataFormats/TrajectoryState/interface/LocalTrajectoryParameters.h"
+#include "DataFormats/Common/interface/RefItemGet.h"
+#include <numeric>
 
 namespace reco {
 
@@ -44,13 +46,20 @@ namespace reco {
     unsigned int recHitsSize() const { return m_nHits; }
 
     /// accessor to RecHits
-    auto recHits() const { return TrackingRecHitRange(recHitsBegin(), recHitsEnd()); }
+    auto recHits() const {
+      trackingRecHit_iterator const& begin = recHitsBegin();
+      trackingRecHit_iterator end = begin == trackingRecHit_iterator() ? trackingRecHit_iterator() : begin + m_nHits;
+      return TrackingRecHitRange(begin, end);
+    }
 
     /// first iterator over RecHits
-    trackingRecHit_iterator recHitsBegin() const { return recHitsProduct().data().begin() + firstRecHit(); }
+    trackingRecHit_iterator recHitsBegin() const;
 
     /// last iterator over RecHits
-    trackingRecHit_iterator recHitsEnd() const { return recHitsBegin() + recHitsSize(); }
+    trackingRecHit_iterator recHitsEnd() const {
+      trackingRecHit_iterator const& begin = recHitsBegin();
+      return begin == trackingRecHit_iterator() ? trackingRecHit_iterator() : begin + m_nHits;
+    }
 
     /// get a ref to i-th recHit
     TrackingRecHitRef recHitRef(unsigned int i) const {
@@ -68,10 +77,6 @@ namespace reco {
 
     /// get i-th recHit
     TrackingRecHitRef recHit(unsigned int i) const { return recHitRef(i); }
-
-    TrackingRecHitCollection const& recHitsProduct() const {
-      return *edm::getProduct<TrackingRecHitCollection>(m_hitCollection);
-    }
 
     TrajParams const& trajParams() const { return m_trajParams; }
     Chi2sFive const& chi2sX5() const { return m_chi2sX5; }
