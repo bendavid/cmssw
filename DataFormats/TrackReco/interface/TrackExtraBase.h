@@ -38,7 +38,7 @@ namespace reco {
       m_chi2sX5 = std::move(chi2s);
     }
 
-    unsigned int firstRecHit() const { return m_firstHit; }
+    unsigned int firstRecHit() const;
 
     /// number of RecHits
     unsigned int recHitsSize() const { return m_nHits; }
