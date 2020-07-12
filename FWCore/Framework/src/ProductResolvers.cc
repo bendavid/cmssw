@@ -386,13 +386,18 @@ namespace edm {
                                                                               bool skipCurrentProcess,
                                                                               SharedResourcesAcquirer* sra,
                                                                               ModuleCallingContext const* mcc) const {
+    if (!mcc) {
+      printf("resolveProduct_: skipCurrentProcess = %d, worker_==nullptr = %d, status = %d\n",
+             skipCurrentProcess,
+             worker_ == nullptr,
+             int(status()));
+    }
     if (!skipCurrentProcess and worker_) {
       return resolveProductImpl<true>([&principal, this, sra, mcc]() {
         try {
           auto const& event = static_cast<EventPrincipal const&>(principal);
           ParentContext parentContext(mcc);
           aux_->preModuleDelayedGetSignal_.emit(*(mcc->getStreamContext()), *mcc);
-
           auto workCall = [this, &event, &parentContext, mcc]() {
             auto sentry(make_sentry(mcc, [this](ModuleCallingContext const* iContext) {
               aux_->postModuleDelayedGetSignal_.emit(*(iContext->getStreamContext()), *iContext);

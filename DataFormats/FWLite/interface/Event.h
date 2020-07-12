@@ -163,7 +163,9 @@ namespace fwlite {
     edm::ParameterSet const* parameterSet(edm::ParameterSetID const& psID) const override;
 
     edm::WrapperBase const* getByProductID(edm::ProductID const&) const override;
-    edm::WrapperBase const* getThinnedProduct(edm::ProductID const& pid, unsigned int& key) const;
+    edm::WrapperBase const* getThinnedProduct(edm::ProductID const& pid,
+                                              unsigned int& key,
+                                              edm::ProductID const& targetpid) const;
     void getThinnedProducts(edm::ProductID const& pid,
                             std::vector<edm::WrapperBase const*>& foundContainers,
                             std::vector<unsigned int>& keys) const;

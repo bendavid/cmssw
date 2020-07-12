@@ -93,7 +93,7 @@ namespace edm {
       ~EventPrincipalHolder() override;
 
       WrapperBase const* getIt(ProductID const& id) const override;
-      WrapperBase const* getThinnedProduct(ProductID const&, unsigned int&) const override;
+      WrapperBase const* getThinnedProduct(ProductID const&, unsigned int&, ProductID const&) const override;
       void getThinnedProducts(ProductID const& pid,
                               std::vector<WrapperBase const*>& wrappers,
                               std::vector<unsigned int>& keys) const override;

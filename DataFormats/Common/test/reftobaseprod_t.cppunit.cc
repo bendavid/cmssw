@@ -175,7 +175,9 @@ namespace {
   struct TestGetter : public edm::EDProductGetter {
     WrapperBase const* hold_;
     virtual WrapperBase const* getIt(ProductID const&) const override { return hold_; }
-    virtual edm::WrapperBase const* getThinnedProduct(ProductID const&, unsigned int&) const override {
+    virtual edm::WrapperBase const* getThinnedProduct(ProductID const&,
+                                                      unsigned int&,
+                                                      edm::ProductID const&) const override {
       return nullptr;
     }
 

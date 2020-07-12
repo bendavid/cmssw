@@ -31,7 +31,9 @@ public:
     return i->second.get();
   }
 
-  virtual edm::WrapperBase const* getThinnedProduct(edm::ProductID const&, unsigned int&) const override {
+  virtual edm::WrapperBase const* getThinnedProduct(edm::ProductID const&,
+                                                    unsigned int&,
+                                                    edm::ProductID const&) const override {
     return nullptr;
   }
 

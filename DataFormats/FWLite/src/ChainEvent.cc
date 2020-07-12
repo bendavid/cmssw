@@ -218,8 +218,10 @@ namespace fwlite {
     return event_->getByProductID(iID);
   }
 
-  edm::WrapperBase const* ChainEvent::getThinnedProduct(edm::ProductID const& pid, unsigned int& key) const {
-    return event_->getThinnedProduct(pid, key);
+  edm::WrapperBase const* ChainEvent::getThinnedProduct(edm::ProductID const& pid,
+                                                        unsigned int& key,
+                                                        edm::ProductID const& targetpid) const {
+    return event_->getThinnedProduct(pid, key, targetpid);
   }
 
   void ChainEvent::getThinnedProducts(edm::ProductID const& pid,

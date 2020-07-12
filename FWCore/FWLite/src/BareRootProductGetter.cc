@@ -157,7 +157,9 @@ edm::WrapperBase const* BareRootProductGetter::getIt(edm::BranchID const& branch
   return buffer->product_.get();
 }
 
-edm::WrapperBase const* BareRootProductGetter::getThinnedProduct(edm::ProductID const& pid, unsigned int& key) const {
+edm::WrapperBase const* BareRootProductGetter::getThinnedProduct(edm::ProductID const& pid,
+                                                                 unsigned int& key,
+                                                                 edm::ProductID const& targetpid) const {
   Long_t eventEntry = branchMap_.getEventTree()->GetReadEntry();
   edm::BranchID parent = branchMap_.productToBranchID(pid);
   if (!parent.isValid())
@@ -187,11 +189,12 @@ edm::WrapperBase const* BareRootProductGetter::getThinnedProduct(edm::ProductID 
     // Get the thinned container and return a pointer if we can find it
     edm::ProductID const& thinnedCollectionPID = thinnedAssociation->thinnedCollectionID();
     edm::WrapperBase const* thinnedCollection = getIt(thinnedCollectionPID);
-    if (thinnedCollection == nullptr) {
+    if (thinnedCollection == nullptr || (targetpid.isValid() && thinnedCollectionPID != targetpid)) {
       // Thinned container is not found, try looking recursively in thinned containers
       // which were made by selecting elements from this thinned container.
-      edm::WrapperBase const* thinnedFromRecursiveCall = getThinnedProduct(thinnedCollectionPID, thinnedIndex);
-      if (thinnedFromRecursiveCall != nullptr) {
+      edm::WrapperBase const* thinnedFromRecursiveCall =
+          getThinnedProduct(thinnedCollectionPID, thinnedIndex, targetpid);
+      if (thinnedFromRecursiveCall != nullptr && (!targetpid.isValid() || thinnedCollectionPID == targetpid)) {
         key = thinnedIndex;
         return thinnedFromRecursiveCall;
       } else {

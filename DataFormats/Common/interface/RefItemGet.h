@@ -115,6 +115,35 @@ namespace edm {
   inline bool isThinnedAvailable(RefCore const& product, KEY const& iKey) {
     return refitem::IsThinnedAvailableImpl<C, KEY>::isThinnedAvailable_(product, iKey);
   }
+
+  template <typename C>
+  inline Ref<C> thinnedRefFrom(Ref<C> const& parent, ProductID const& targetpid, EDProductGetter const& prodGetter) {
+    printf("thinnedRefFrom\n");
+    if (parent.id() == targetpid) {
+      printf("returning parent\n");
+      return parent;
+    }
+    printf("checking for thinned collections\n");
+    unsigned int key = parent.key();
+    WrapperBase const* thinnedprod = prodGetter.getThinnedProduct(parent.id(), key, targetpid);
+    printf("checking result\n");
+    if (thinnedprod == nullptr) {
+      printf("returning null\n");
+      return Ref<C>(targetpid);
+    }
+    printf("getting item pointer\n");
+    typename edm::Ref<C>::finder_type finder;
+    Wrapper<C> const* wrapper = static_cast<Wrapper<C> const*>(thinnedprod);
+    typename edm::Ref<C>::value_type const* item = finder(*wrapper->product(), key);
+    //     typename edm::Ref<C>::value_type const* item =
+    //             finder(*(static_cast<typename edm::Ref<C>::product_type const*>(thinnedprod->product())), key);
+    printf("returning final ref\n");
+    return Ref<C>(targetpid, item, key);
+    //TODO we already have the collection pointer, so we could fill the cache of the Ref directly
+    //to speed up any subsequent access
+    //     return Ref<C>(targetpid, key, &prodGetter);
+  }
+
 }  // namespace edm
 
 #endif

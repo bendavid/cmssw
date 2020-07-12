@@ -300,7 +300,10 @@ namespace edm {
 
   WrapperBase const* EventPrincipal::getIt(ProductID const& pid) const { return getByProductID(pid).wrapper(); }
 
-  WrapperBase const* EventPrincipal::getThinnedProduct(ProductID const& pid, unsigned int& key) const {
+  WrapperBase const* EventPrincipal::getThinnedProduct(ProductID const& pid,
+                                                       unsigned int& key,
+                                                       ProductID const& targetpid) const {
+    printf("get branch id\n");
     BranchID parent = pidToBid(pid);
 
     // Loop over thinned containers which were made by selecting elements from the parent container
@@ -308,6 +311,7 @@ namespace edm {
               iEnd = thinnedAssociationsHelper_->parentEnd(parent);
          associatedBranches != iEnd;
          ++associatedBranches) {
+      printf("get thinned association\n");
       ThinnedAssociation const* thinnedAssociation = getThinnedAssociation(associatedBranches->association());
       if (thinnedAssociation == nullptr)
         continue;
@@ -316,6 +320,7 @@ namespace edm {
         continue;
       }
 
+      printf("checking index\n");
       unsigned int thinnedIndex = 0;
       // Does this thinned container have the element referenced by key?
       // If yes, thinnedIndex is set to point to it in the thinned container
@@ -325,11 +330,12 @@ namespace edm {
       // Get the thinned container and return a pointer if we can find it
       ProductID const& thinnedCollectionPID = thinnedAssociation->thinnedCollectionID();
       BasicHandle bhThinned = getByProductID(thinnedCollectionPID);
-      if (!bhThinned.isValid()) {
+      if (!bhThinned.isValid() || (targetpid.isValid() && thinnedCollectionPID != targetpid)) {
+        printf("recursive check\n");
         // Thinned container is not found, try looking recursively in thinned containers
         // which were made by selecting elements from this thinned container.
-        WrapperBase const* wrapperBase = getThinnedProduct(thinnedCollectionPID, thinnedIndex);
-        if (wrapperBase != nullptr) {
+        WrapperBase const* wrapperBase = getThinnedProduct(thinnedCollectionPID, thinnedIndex, targetpid);
+        if (wrapperBase != nullptr && (!targetpid.isValid() || thinnedCollectionPID == targetpid)) {
           key = thinnedIndex;
           return wrapperBase;
         } else {
@@ -417,23 +423,33 @@ namespace edm {
   BranchListIndexes const& EventPrincipal::branchListIndexes() const { return branchListIndexes_; }
 
   edm::ThinnedAssociation const* EventPrincipal::getThinnedAssociation(edm::BranchID const& branchID) const {
+    printf("get product resolver\n");
     ConstProductResolverPtr const phb = getProductResolver(branchID);
+    printf("phbnull = %d\n", phb == nullptr);
+    //     printf("phbstatus = %d\n", phb->status());
 
     if (phb == nullptr) {
       throw Exception(errors::LogicError)
           << "EventPrincipal::getThinnedAssociation, ThinnedAssociation ProductResolver cannot be found\n"
           << "This should never happen. Contact a Framework developer";
     }
+    //handle case where thinnedAssociation hasn't been produced yet (then it is not needed by construction)
+    if (phb->unscheduledWasNotRun()) {
+      return nullptr;
+    }
+    printf("resolve product\n");
     ProductData const* productData = (phb->resolveProduct(*this, false, nullptr, nullptr)).data();
     if (productData == nullptr) {
       return nullptr;
     }
+    printf("final checks\n");
     WrapperBase const* product = productData->wrapper();
     if (!(typeid(edm::ThinnedAssociation) == product->dynamicTypeInfo())) {
       throw Exception(errors::LogicError)
           << "EventPrincipal::getThinnedProduct, product has wrong type, not a ThinnedAssociation.\n";
     }
     Wrapper<ThinnedAssociation> const* wrapper = static_cast<Wrapper<ThinnedAssociation> const*>(product);
+    printf("done\n");
     return wrapper->product();
   }
 

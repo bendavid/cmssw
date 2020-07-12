@@ -401,6 +401,7 @@ namespace fwlite {
 
   edm::WrapperBase const* DataGetterHelper::getThinnedProduct(edm::ProductID const& pid,
                                                               unsigned int& key,
+                                                              edm::ProductID const& targetpid,
                                                               Long_t eventEntry) const {
     edm::BranchID parent = branchMap_->productToBranchID(pid);
     if (!parent.isValid())
@@ -431,12 +432,12 @@ namespace fwlite {
       edm::ProductID const& thinnedCollectionPID = thinnedAssociation->thinnedCollectionID();
       edm::WrapperBase const* thinnedCollection = getByProductID(thinnedCollectionPID, eventEntry);
 
-      if (thinnedCollection == nullptr) {
+      if (thinnedCollection == nullptr || (targetpid.isValid() && thinnedCollectionPID != targetpid)) {
         // Thinned container is not found, try looking recursively in thinned containers
         // which were made by selecting elements from this thinned container.
         edm::WrapperBase const* thinnedFromRecursiveCall =
-            getThinnedProduct(thinnedCollectionPID, thinnedIndex, eventEntry);
-        if (thinnedFromRecursiveCall != nullptr) {
+            getThinnedProduct(thinnedCollectionPID, thinnedIndex, targetpid, eventEntry);
+        if (thinnedFromRecursiveCall != nullptr && (!targetpid.isValid() || thinnedCollectionPID == targetpid)) {
           key = thinnedIndex;
           return thinnedFromRecursiveCall;
         } else {

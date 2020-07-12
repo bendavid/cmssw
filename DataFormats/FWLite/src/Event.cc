@@ -68,8 +68,10 @@ namespace fwlite {
       // in a thinned container and key is modified to be the index into
       // that thinned container. If the desired element is not found, then
       // nullptr is returned.
-      edm::WrapperBase const* getThinnedProduct(edm::ProductID const& pid, unsigned int& key) const override {
-        return event_->getThinnedProduct(pid, key);
+      edm::WrapperBase const* getThinnedProduct(edm::ProductID const& pid,
+                                                unsigned int& key,
+                                                edm::ProductID const& targetpid) const override {
+        return event_->getThinnedProduct(pid, key, targetpid);
       }
 
       // getThinnedProducts assumes getIt was already called and failed to find
@@ -366,9 +368,11 @@ namespace fwlite {
     return dataHelper_.getByProductID(iID, eventEntry);
   }
 
-  edm::WrapperBase const* Event::getThinnedProduct(edm::ProductID const& pid, unsigned int& key) const {
+  edm::WrapperBase const* Event::getThinnedProduct(edm::ProductID const& pid,
+                                                   unsigned int& key,
+                                                   edm::ProductID const& targetpid) const {
     Long_t eventEntry = branchMap_.getEventEntry();
-    return dataHelper_.getThinnedProduct(pid, key, eventEntry);
+    return dataHelper_.getThinnedProduct(pid, key, targetpid, eventEntry);
   }
 
   void Event::getThinnedProducts(edm::ProductID const& pid,

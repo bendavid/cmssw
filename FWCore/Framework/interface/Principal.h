@@ -230,7 +230,7 @@ namespace edm {
     void addParentProcessProduct(std::shared_ptr<BranchDescription const> bd);
 
     WrapperBase const* getIt(ProductID const&) const override;
-    WrapperBase const* getThinnedProduct(ProductID const&, unsigned int&) const override;
+    WrapperBase const* getThinnedProduct(ProductID const&, unsigned int&, ProductID const&) const override;
     void getThinnedProducts(ProductID const&,
                             std::vector<WrapperBase const*>&,
                             std::vector<unsigned int>&) const override;
