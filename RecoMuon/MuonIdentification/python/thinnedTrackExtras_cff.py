@@ -6,20 +6,25 @@ from RecoTracker.TrackProducer.siStripClusterThinningProducer_cfi import siStrip
 import FWCore.ParameterSet.Config as cms
 
 thinnedGeneralTrackExtras = muonTrackExtraThinningProducer.clone(inputTag = cms.InputTag("generalTracks"),
-                                                                  cut = cms.string("pt > 3. || isPFMuon"),
+                                                                  #cut = cms.string("pt > 3. || isPFMuon"),
+                                                                  cut = cms.string("pt > 4.5"),
                                                                   slimTrajParams = cms.bool(True),
                                                                   slimResiduals = cms.bool(True),
                                                                   slimFinalState = cms.bool(True))
 
 #standalone muons not needed here because full collection of both TrackExtras and TrackingRecHits are stored in AOD
 
-thinnedGlobalMuonExtras = thinnedGeneralTrackExtras.clone(inputTag = cms.InputTag("globalMuons"))
+#these are transient and therefore don't need to be slimmed
+thinnedGlobalMuonExtras = thinnedGeneralTrackExtras.clone(inputTag = cms.InputTag("globalMuons"),
+                                                          slimTrajParams = cms.bool(False),
+                                                          slimResiduals = cms.bool(False),
+                                                          slimFinalState = cms.bool(False))
 
-thinnedTevMuonExtrasFirstHit = thinnedGeneralTrackExtras.clone(inputTag = cms.InputTag("tevMuons","firstHit"))
+thinnedTevMuonExtrasFirstHit = thinnedGlobalMuonExtras.clone(inputTag = cms.InputTag("tevMuons","firstHit"))
 
-thinnedTevMuonExtrasPicky = thinnedGeneralTrackExtras.clone(inputTag = cms.InputTag("tevMuons","picky"))
+thinnedTevMuonExtrasPicky = thinnedGlobalMuonExtras.clone(inputTag = cms.InputTag("tevMuons","picky"))
 
-thinnedTevMuonExtrasDyt = thinnedGeneralTrackExtras.clone(inputTag = cms.InputTag("tevMuons","dyt"))
+thinnedTevMuonExtrasDyt = thinnedGlobalMuonExtras.clone(inputTag = cms.InputTag("tevMuons","dyt"))
 
 thinnedGeneralTrackHits = trackingRecHitThinningProducer.clone(inputTag = cms.InputTag("generalTracks"),
                                                                trackExtraTag = cms.InputTag("thinnedGeneralTrackExtras"))
