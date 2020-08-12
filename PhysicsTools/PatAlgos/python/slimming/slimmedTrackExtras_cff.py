@@ -7,7 +7,8 @@ import FWCore.ParameterSet.Config as cms
 
 slimmedGeneralTrackExtras = muonTrackExtraThinningProducer.clone(inputTag = cms.InputTag("thinnedGeneralTrackExtras"),
                                                   muonTag = "slimmedMuons",
-                                                  cut = "",
+                                                  #cut = "",
+                                                  cut = cms.string("pt > 4.5"),
                                                   slimTrajParams = cms.bool(True),
                                                   slimResiduals = cms.bool(True),
                                                   slimFinalState = cms.bool(True),
@@ -16,13 +17,13 @@ slimmedGeneralTrackExtras = muonTrackExtraThinningProducer.clone(inputTag = cms.
 #this one points to the original full collection of TrackExtras since it is available in the AOD
 slimmedStandAloneMuonExtras = slimmedGeneralTrackExtras.clone(inputTag = cms.InputTag("standAloneMuons"))
 
-slimmedGlobalMuonExtras = slimmedGeneralTrackExtras.clone(inputTag = cms.InputTag("thinnedGlobalMuonExtras"))
+slimmedGlobalMuonExtras = slimmedGeneralTrackExtras.clone(inputTag = cms.InputTag("globalMuons"))
 
-slimmedTevMuonExtrasFirstHit = slimmedGeneralTrackExtras.clone(inputTag = cms.InputTag("thinnedTevMuonExtrasFirstHit"))
+slimmedTevMuonExtrasFirstHit = slimmedGeneralTrackExtras.clone(inputTag = cms.InputTag("tevMuons","firstHit"))
 
-slimmedTevMuonExtrasPicky = slimmedGeneralTrackExtras.clone(inputTag = cms.InputTag("thinnedTevMuonExtrasPicky"))
+slimmedTevMuonExtrasPicky = slimmedGeneralTrackExtras.clone(inputTag = cms.InputTag("tevMuons","picky"))
 
-slimmedTevMuonExtrasDyt = slimmedGeneralTrackExtras.clone(inputTag = cms.InputTag("thinnedTevMuonExtrasDyt"))
+slimmedTevMuonExtrasDyt = slimmedGeneralTrackExtras.clone(inputTag = cms.InputTag("tevMuons","dyt"))
 
 slimmedGeneralTrackHits = trackingRecHitThinningProducer.clone(inputTag = cms.InputTag("thinnedGeneralTrackHits"),
                                                                trackExtraTag = cms.InputTag("slimmedGeneralTrackExtras"))
