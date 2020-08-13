@@ -385,14 +385,7 @@ namespace edm {
               return associatedBranches.thinned() == thinned;
             });
         if (branchesToThinned == thinnedAssociationsHelper.end()) {
-          if (thinnedAssociationParentage.empty()) {
-            throw Exception(errors::ProductNotFound)
-                << "Thinned collection with ProductID " << thinnedID << " not found";
-          } else {
-            throw Exception(errors::InvalidReference) << "Requested thinned collection with ProductID " << thinnedID
-                                                      << " is not thinned from the parent collection with ProductID "
-                                                      << parentID << " or from any collection thinned from it.";
-          }
+          return std::nullopt;
         }
 
         ThinnedAssociation const* thinnedAssociation = getThinnedAssociation(branchesToThinned->association());
