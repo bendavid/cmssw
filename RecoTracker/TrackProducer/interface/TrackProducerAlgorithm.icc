@@ -148,7 +148,8 @@ void TrackProducerAlgorithm<T>::runWithTrack(const TrackingGeometry* theG,
         }      //if rematching option is on.
 
         if ((**i).geographicalId() != 0U)
-          hits.push_back((**i).cloneForFit(*builder->geometry()->idToDet((**i).geographicalId())));
+//           hits.push_back((**i).cloneForFit(*builder->geometry()->idToDet((**i).geographicalId())));
+          hits.push_back((**i).cloneForFit(*theG->idToDet((**i).geographicalId())));
       }
 
       TrajectoryStateOnSurface theInitialStateForRefitting = getInitialState(theT, hits, theG, theMF);

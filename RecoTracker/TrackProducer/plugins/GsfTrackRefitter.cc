@@ -63,7 +63,7 @@ void GsfTrackRefitter::produce(edm::Event& theEvent, const edm::EventSetup& setu
   //
   //declare and get stuff to be retrieved from ES
   //
-  edm::ESHandle<TrackerGeometry> theG;
+  edm::ESHandle<GlobalTrackingGeometry> theG;
   edm::ESHandle<MagneticField> theMF;
   edm::ESHandle<TrajectoryFitter> theFitter;
   edm::ESHandle<Propagator> thePropagator;

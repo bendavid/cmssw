@@ -41,7 +41,7 @@ TrackProducerBase<T>::~TrackProducerBase() noexcept(false) {}
 
 template <class T>
 void TrackProducerBase<T>::getFromES(const edm::EventSetup& setup,
-                                     edm::ESHandle<TrackerGeometry>& theG,
+                                     edm::ESHandle<GlobalTrackingGeometry>& theG,
                                      edm::ESHandle<MagneticField>& theMF,
                                      edm::ESHandle<TrajectoryFitter>& theFitter,
                                      edm::ESHandle<Propagator>& thePropagator,
@@ -52,7 +52,7 @@ void TrackProducerBase<T>::getFromES(const edm::EventSetup& setup,
   //
   LogDebug("TrackProducer") << "get geometry"
                             << "\n";
-  setup.get<TrackerDigiGeometryRecord>().get(theG);
+  setup.get<GlobalTrackingGeometryRecord>().get(theG);
   //
   //get magnetic field
   //

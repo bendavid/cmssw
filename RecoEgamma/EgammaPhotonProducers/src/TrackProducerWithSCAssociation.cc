@@ -72,7 +72,7 @@ void TrackProducerWithSCAssociation::produce(edm::Event& theEvent, const edm::Ev
   //
   //declare and get stuff to be retrieved from ES
   //
-  edm::ESHandle<TrackerGeometry> theG;
+  edm::ESHandle<GlobalTrackingGeometry> theG;
   edm::ESHandle<MagneticField> theMF;
   edm::ESHandle<TrajectoryFitter> theFitter;
   edm::ESHandle<Propagator> thePropagator;
@@ -217,7 +217,7 @@ std::vector<reco::TransientTrack> TrackProducerWithSCAssociation::getTransient(e
   //
   //declare and get stuff to be retrieved from ES
   //
-  edm::ESHandle<TrackerGeometry> theG;
+  edm::ESHandle<GlobalTrackingGeometry> theG;
   edm::ESHandle<MagneticField> theMF;
   edm::ESHandle<TrajectoryFitter> theFitter;
   edm::ESHandle<Propagator> thePropagator;

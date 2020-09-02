@@ -31,6 +31,7 @@ class Propagator;
 class TrajectoryStateUpdator;
 class MeasurementEstimator;
 class TrackerGeometry;
+class GlobalTrackingGeometry;
 class TrajectoryFitter;
 class TransientTrackingRecHitBuilder;
 class NavigationSchool;
@@ -52,7 +53,7 @@ public:
 
   /// Get needed services from the Event Setup
   virtual void getFromES(const edm::EventSetup&,
-                         edm::ESHandle<TrackerGeometry>&,
+                         edm::ESHandle<GlobalTrackingGeometry>&,
                          edm::ESHandle<MagneticField>&,
                          edm::ESHandle<TrajectoryFitter>&,
                          edm::ESHandle<Propagator>&,
