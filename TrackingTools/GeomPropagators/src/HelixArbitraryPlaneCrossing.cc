@@ -237,4 +237,4 @@ bool HelixArbitraryPlaneCrossing::notAtSurface (const Plane& plane,
 }
 
 const float HelixArbitraryPlaneCrossing::theNumericalPrecision = 5.e-7f;
-const float HelixArbitraryPlaneCrossing::theMaxDistToPlane = 1.e-4f;
+const float HelixArbitraryPlaneCrossing::theMaxDistToPlane = 1e-9f;
