@@ -113,11 +113,14 @@ TrackProducerAlgorithm<T>::runWithTrack(const TrackingGeometry * theG,
 	   	//re-match hits that belong together
       		trackingRecHit_iterator next = i; next++;
                 if (next != theT->recHitsEnd() && (*i)->isValid()){
+                  if (!(*next)->isValid()) {
+                    continue;
+                  }
 			//check whether hit and nexthit are on glued module
 			DetId hitId = (**i).geographicalId();
 
 			if(hitId.det() == DetId::Tracker) {
-                          if(GeomDetEnumerators::isTrackerStrip((**i).det()->subDetector())) {
+                          if(GeomDetEnumerators::isTrackerStrip(builder->geometry()->idToDet( (**i).geographicalId() )->subDetector())) {
 			    SiStripDetId stripId(hitId);
 			    if (stripId.partnerDetId() == (*next)->geographicalId().rawId()){
 			      //yes they are parterns in a glued geometry.
@@ -132,7 +135,9 @@ TrackProducerAlgorithm<T>::runWithTrack(const TrackingGeometry * theG,
 				mono=dynamic_cast<const SiStripRecHit2D *>(&**next);
 				stereo=dynamic_cast<const SiStripRecHit2D *>(&**i);
 			      }
+//                   std::cout << "types: " << typeid(**i).name() << " " << typeid(**next).name() << std::endl;
 			      if (!mono	|| !stereo){
+                    continue;
 					edm::LogError("TrackProducerAlgorithm")
 						<<"cannot get a SiStripRecHit2D from the rechit."<<hitId.rawId()
 						<<" "<<gluedId.rawId()

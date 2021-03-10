@@ -442,6 +442,8 @@ int SiPixelTemplateReco::PixelTempReco1D(int id, float cotalpha, float cotbeta, 
       }
    }
    
+//    std::cout << "logxpx = " << logxpx << " nxpix = " << nxpix << std::endl;
+   
    //	dlengthx = (float)nxpix - templ.clslenx();
    
    // Make sure cluster is continuous
@@ -877,6 +879,8 @@ int SiPixelTemplateReco::PixelTempReco1D(int id, float cotalpha, float cotbeta, 
       } else {
          sigmax = sigma;
       }
+      
+//       std::cout << "shiftx = " << shiftx << " delta = " << delta << std::endl;
       
       // Do probability calculation for one-pixel clusters
       

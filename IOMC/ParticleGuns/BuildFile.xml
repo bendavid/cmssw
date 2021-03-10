@@ -5,4 +5,7 @@
 <use   name="clhep"/>
 <use   name="hepmc"/>
 <use   name="heppdt"/>
+<use name="Geometry/CommonDetUnit"/>
+<use name="Geometry/Records"/>
+<use name="Geometry/CommonTopologies"/>
 <flags   EDM_PLUGIN="1"/>

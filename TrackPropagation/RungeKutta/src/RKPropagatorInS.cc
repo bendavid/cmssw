@@ -128,6 +128,10 @@ RKPropagatorInS::propagateParametersOnPlane( const FreeTrajectoryState& ts,
 
   RKCartesianDistance dist;
   double eps = theTolerance;
+//   double epssurface = theTolerance;
+//   double epsstep = 1e-2;
+//   double epssolve = theTolerance;
+  
   Solver solver;
   double stot = 0;
   PropagationDirection currentDirection = propagationDirection();
@@ -175,6 +179,17 @@ RKPropagatorInS::propagateParametersOnPlane( const FreeTrajectoryState& ts,
       GlobalTrajectoryParameters res( gtpFromVolumeLocal( cur, ts.charge()));
       return GlobalParametersWithPath( res, stot);
     }
+//     if ( fabs(remainingZ) < eps && std::abs(sstep) < eps) {
+//       LogDebug("RKPropagatorInS")  << "On-surface accuracy reached! " << remainingZ ;
+//       GlobalTrajectoryParameters res( gtpFromVolumeLocal( cur, ts.charge()));
+//       return GlobalParametersWithPath( res, stot);
+//     }
+//     else if  UNLIKELY( std::abs(sstep) < eps) {
+//       LogDebug("RKPropagatorInS")  << "On-surface accuracy not reached, but pathLength calculation says we are there! "
+// 		 << "path " << path.second << " distance to plane is " << startZ ;
+//       GlobalTrajectoryParameters res( gtpFromVolumeLocal( startState, ts.charge()));
+//       return GlobalParametersWithPath( res, stot);
+//     }
 
     start = rkresult;
 
