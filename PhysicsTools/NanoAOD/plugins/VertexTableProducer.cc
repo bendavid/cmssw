@@ -129,6 +129,15 @@ VertexTableProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
     edm::Handle<std::vector<reco::Vertex>> pvsIn;
     iEvent.getByToken(pvs_, pvsIn);
     iEvent.getByToken(pvsScore_, pvsScoreIn);
+    
+    std::cout << "pvsIn->size() = " << pvsIn->size() << std::endl;
+    std::cout << "pvsIn.id() = " << pvsIn.id() << std::endl;
+    std::cout << "pvsScoreIn->size() = " << pvsScoreIn->size() << std::endl;
+    std::cout << "pvsScoreIn ids:" << std::endl;
+    for (auto const &item : pvsScoreIn->ids()) {
+      std::cout << item.first << std::endl;
+    }
+    
     auto pvTable = std::make_unique<nanoaod::FlatTable>(1,pvName_,true);
     pvTable->addColumnValue<float>("ndof",(*pvsIn)[0].ndof(),"main primary vertex number of degree of freedom",nanoaod::FlatTable::FloatColumn,8);
     pvTable->addColumnValue<float>("x",(*pvsIn)[0].position().x(),"main primary vertex position x coordinate",nanoaod::FlatTable::FloatColumn,10);
