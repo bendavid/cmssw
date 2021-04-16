@@ -139,7 +139,7 @@ VertexTableProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
     for (const auto & pv : *pvsIn) if (goodPvCut_(pv)) goodPVs++;
     pvTable->addColumnValue<int>("npvs",(*pvsIn).size(),"total number of reconstructed primary vertices",nanoaod::FlatTable::IntColumn);
     pvTable->addColumnValue<int>("npvsGood",goodPVs,"number of good reconstructed primary vertices. selection:"+goodPvCutString_,nanoaod::FlatTable::IntColumn);
-    pvTable->addColumnValue<float>("score",(*pvsScoreIn).get(pvsIn.id(),0),"main primary vertex score, i.e. sum pt2 of clustered objects",nanoaod::FlatTable::FloatColumn,8);
+    pvTable->addColumnValue<float>("score",(*pvsScoreIn).get(pvsScoreIn->ids().front().first,0),"main primary vertex score, i.e. sum pt2 of clustered objects",nanoaod::FlatTable::FloatColumn,8);
 
     auto otherPVsTable = std::make_unique<nanoaod::FlatTable>((*pvsIn).size() >4?3:(*pvsIn).size()-1,"Other"+pvName_,false);
     std::vector<float> pvsz;

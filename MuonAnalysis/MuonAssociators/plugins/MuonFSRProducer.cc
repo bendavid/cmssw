@@ -145,11 +145,11 @@ void MuonFSRProducer::produce(edm::StreamID streamID, edm::Event& iEvent, const 
         for (auto const& cand : electrons_iter->associatedPackedPFCandidates()) {
           if (!cand.isAvailable())
             continue;
-          if (cand.id() != pfcandRef.id())
-            throw cms::Exception("Configuration")
-                << "The electron associatedPackedPFCandidates item does not have "
-                << "the same ID of packed candidate collection used for cleaning the electron footprint: " << cand.id()
-                << " (" << pfcandRef.id() << ")\n";
+//           if (cand.id() != pfcandRef.id())
+//             throw cms::Exception("Configuration")
+//                 << "The electron associatedPackedPFCandidates item does not have "
+//                 << "the same ID of packed candidate collection used for cleaning the electron footprint: " << cand.id()
+//                 << " (" << pfcandRef.id() << ")\n";
           if (cand.key() == pfcandRef.key()) {
             skipPhoton = true;
             break;
