@@ -165,6 +165,10 @@ private:
                              GlobalVector const &cmsInitMom,
                              CLHEP::Hep3Vector const &g4InitMom,
                              const SurfaceType &pDest) const;
+                             
+  double computeErrorIoni(const G4Track* aTrack) const;
+
+  void CalculateEffectiveZandA(const G4Material* mate, G4double& effZ, G4double& effA) const;
 };
 
 #endif

@@ -488,18 +488,26 @@ std::pair<TrajectoryStateOnSurface, Geant4ePropagator::AlgebraicMatrix57> Geant4
 
   theG4eManager->InitTrackPropagation();
   
+  // initial jacobian is the identity matrix for the state components,
+  // and 0 for b-field and material variations
   G4ErrorMatrix jac(5, 7);
   for (unsigned int i = 0; i < 5; ++i) {
     for (unsigned int j = 0; j < 7; ++j) {
-      jac(i+1, j+1) = i < 5 && i == j ? 1. : 0.;
+      jac(i+1, j+1) = i == j ? 1. : 0.;
     }
   }
+  
+  const G4ErrorTrajErr errnull(5, 0);
+  
+  G4ErrorTrajErr g4errorEnd = g4eTrajState.GetError();
 
   bool continuePropagation = true;
   while (continuePropagation) {
     iterations++;
     LogDebug("Geant4e") << std::endl << "step count " << iterations << " step length " << finalPathLength;
 
+    //set the error matrix to null to disentangle MS and ionization contributions
+    g4eTrajState.SetError(errnull);
     const int ierr = theG4eManager->PropagateOneStep(&g4eTrajState, mode);
 
     if (ierr != 0) {
@@ -511,11 +519,23 @@ std::pair<TrajectoryStateOnSurface, Geant4ePropagator::AlgebraicMatrix57> Geant4
 
     const G4ErrorMatrix &transferMatrix = g4eTrajState.GetTransfMat();
     
-    // transport  + nominal energy loss contribution
+    // transport contribution to error
+    g4errorEnd = g4errorEnd.similarity(transferMatrix).T();
+    
+    // MS and ionization contributions to error
+    
+    G4ErrorTrajErr errMSI = g4eTrajState.GetError();
+    
+    // recompute ionization contribution (without truncation for the moment)
+//     errMSI(0+1, 0+1) = computeErrorIoni(g4eTrajState.GetG4Track());
+    
+    g4errorEnd += errMSI;
+    
+    // transport  + nominal energy loss contribution to jacobian
     jac = transferMatrix*jac;
     
     //TODO assess relevance of approximations (does the order matter? position/momentum before or after step?)
-    // local b-field contribution
+    // local b-field contribution to jacobian 
     const GlobalPoint pos = TrackPropagation::hepPoint3DToGlobalPoint(g4eTrajState.GetPosition());
     const GlobalVector mom = TrackPropagation::hep3VectorToGlobalVector(g4eTrajState.GetMomentum()) / GeV;
     const double B = theField->inTesla(pos).mag();
@@ -525,7 +545,7 @@ std::pair<TrajectoryStateOnSurface, Geant4ePropagator::AlgebraicMatrix57> Geant4
       jac(i+1, 5+1) += transferMatrix(i+1, 0+1)*pinv/B;
     }
     
-    // local material contribution
+    // local material contribution to jacobian
     const double ePre = g4eTrajState.GetG4Track()->GetStep()->GetPreStepPoint()->GetTotalEnergy() / GeV;
     const double ePost = g4eTrajState.GetG4Track()->GetStep()->GetPostStepPoint()->GetTotalEnergy() / GeV;
     const double dE = ePost - ePre;
@@ -592,7 +612,7 @@ std::pair<TrajectoryStateOnSurface, Geant4ePropagator::AlgebraicMatrix57> Geant4
 
   // Get the error covariance matrix from Geant4e. It comes in curvilinear
   // coordinates so use the appropiate CMS class
-  G4ErrorTrajErr g4errorEnd = g4eTrajState.GetError();
+//   G4ErrorTrajErr g4errorEnd = g4eTrajState.GetError();
 
   CurvilinearTrajectoryError curvError(
       TrackPropagation::g4ErrorTrajErrToAlgebraicSymMatrix55(g4errorEnd, ftsStart.charge()));
@@ -704,4 +724,106 @@ void Geant4ePropagator::debugReportTrackState(std::string const &currentContext,
                       << "G4e -   G4  point position: " << g4InitPos << " mm, Ro = " << g4InitPos.perp() << " mm";
   LogDebug("Geant4e") << "G4e -   CMS momentum      :" << cmsInitMom << "GeV\n"
                       << " pt: " << cmsInitMom.perp() << "G4e -  G4  momentum      : " << g4InitMom << " MeV";
+}
+
+
+//------------------------------------------------------------------------
+double Geant4ePropagator::computeErrorIoni(const G4Track* aTrack) const
+{
+  G4double stepLengthCm = aTrack->GetStep()->GetStepLength() / cm;
+#ifdef G4EVERBOSE
+  G4double DEDX2;
+  if(stepLengthCm < 1.E-7)
+  {
+    DEDX2 = 0.;
+  }
+#endif
+  //  *     Calculate xi factor (KeV).
+  G4Material* mate = aTrack->GetVolume()->GetLogicalVolume()->GetMaterial();
+  G4double effZ, effA;
+  CalculateEffectiveZandA(mate, effZ, effA);
+
+  G4double Etot  = aTrack->GetTotalEnergy() / GeV;
+  G4double beta  = aTrack->GetMomentum().mag() / GeV / Etot;
+  G4double mass  = aTrack->GetDynamicParticle()->GetMass() / GeV;
+  G4double gamma = Etot / mass;
+
+  // *     Calculate xi factor (keV).
+  G4double XI = 153.5 * effZ * stepLengthCm * (mate->GetDensity() / mg * mole) /
+                (effA * beta * beta);
+
+#ifdef G4EVERBOSE
+  if(iverbose >= 2)
+  {
+    G4cout << "G4EP:IONI: XI/keV " << XI << " beta " << beta << " gamma "
+           << gamma << G4endl;
+    G4cout << " density " << (mate->GetDensity() / mg * mole) << " effA "
+           << effA << " step " << stepLengthCm << G4endl;
+  }
+#endif
+  // *     Maximum energy transfer to atomic electron (KeV).
+  G4double eta       = beta * gamma;
+  G4double etasq     = eta * eta;
+  G4double eMass     = 0.51099906 / GeV;
+  G4double massRatio = eMass / mass;
+  G4double F1        = 2 * eMass * etasq;
+  G4double F2        = 1. + 2. * massRatio * gamma + massRatio * massRatio;
+  G4double Emax      = 1.E+6 * F1 / F2;  // now in keV
+
+  //  * *** and now sigma**2  in GeV
+  G4double dedxSq =
+    XI * Emax * (1. - (beta * beta / 2.)) * 1.E-12;  // now in GeV^2
+  /*The above  formula for var(1/p) good for dens scatterers. However, for MIPS
+    passing through a gas it leads to overestimation. Further more for incident
+    electrons the Emax is almost equal to incident energy. This leads  to
+    k=Xi/Emax  as small as e-6  and gradually the cov matrix  explodes.
+    http://www2.pv.infn.it/~rotondi/kalman_1.pdf
+    Since I do not have enough info at the moment to implement Landau &
+    sub-Landau models for k=Xi/Emax <0.01 I'll saturate k at this value for now
+  */
+
+  if (false) {
+    if(XI / Emax < 0.01)
+      dedxSq *=
+        XI / Emax * 100;  // Quench for low Elos, see above: newVar=odVar *k/0.01
+  }
+
+#ifdef G4EVERBOSE
+  if(iverbose >= 2)
+    G4cout << "G4EP:IONI: DEDX^2(GeV^2) " << dedxSq << " emass/GeV: " << eMass
+           << " Emax/keV: " << Emax << "  k=Xi/Emax=" << XI / Emax << G4endl;
+
+#endif
+
+  G4double pPre6 =
+    (aTrack->GetStep()->GetPreStepPoint()->GetMomentum() / GeV).mag();
+  pPre6 = std::pow(pPre6, 6);
+  // Apply it to error
+  const double res = Etot * Etot * dedxSq / pPre6;
+#ifdef G4EVERBOSE
+  if(iverbose >= 2)
+    G4cout << "G4:IONI Etot/GeV: " << Etot << " err_dedx^2/GeV^2: " << dedxSq
+           << " p^6: " << pPre6 << G4endl;
+  if(iverbose >= 2)
+    G4cout << "G4EP:IONI: error2_from_ionisation "
+           << (Etot * Etot * dedxSq) / pPre6 << G4endl;
+#endif
+
+  return res;
+}
+
+//------------------------------------------------------------------------
+void Geant4ePropagator::CalculateEffectiveZandA(const G4Material* mate,
+                                                   G4double& effZ,
+                                                   G4double& effA) const
+{
+  effZ = 0.;
+  effA = 0.;
+  G4int ii, nelem = mate->GetNumberOfElements();
+  const G4double* fracVec = mate->GetFractionVector();
+  for(ii = 0; ii < nelem; ii++)
+  {
+    effZ += mate->GetElement(ii)->GetZ() * fracVec[ii];
+    effA += mate->GetElement(ii)->GetA() * fracVec[ii] / g * mole;
+  }
 }
