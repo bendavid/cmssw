@@ -405,6 +405,235 @@ std::pair<TrajectoryStateOnSurface, double> Geant4ePropagator::propagateGeneric(
   return TsosPP(TrajectoryStateOnSurface(tParsDest, curvError, pDest, side), finalPathLength);
 }
 
+std::pair<TrajectoryStateOnSurface, Geant4ePropagator::AlgebraicMatrix57> Geant4ePropagator::propagateGenericWithJacobian(const FreeTrajectoryState &ftsStart,
+                                                                                const Plane &pDest) const {
+  ///////////////////////////////
+  // Construct the target surface
+  //
+  //* Set the target surface
+
+  ErrorTargetPair g4eTarget_center = transformToG4SurfaceTarget(pDest, false);
+
+  // * Get the starting point and direction and convert them to
+  // CLHEP::Hep3Vector
+  //   for G4. CMS uses cm and GeV while Geant4 uses mm and MeV
+  GlobalPoint cmsInitPos = ftsStart.position();
+  GlobalVector cmsInitMom = ftsStart.momentum();
+  bool flipped = false;
+  if (propagationDirection() == oppositeToMomentum) {
+    // flip the momentum vector as Geant4 will not do this
+    // on it's own in a backward propagation
+    cmsInitMom = -cmsInitMom;
+    flipped = true;
+  }
+
+  // Set the mode of propagation according to the propagation direction
+  G4ErrorMode mode = G4ErrorMode_PropForwards;
+  if (!configurePropagation(mode, pDest, cmsInitPos, cmsInitMom))
+    return std::pair<TrajectoryStateOnSurface, AlgebraicMatrix57>(TrajectoryStateOnSurface(), AlgebraicMatrix57());
+
+  // re-check propagation direction chosen in case of AnyDirection
+  if (mode == G4ErrorMode_PropBackwards && !flipped)
+    cmsInitMom = -cmsInitMom;
+
+  CLHEP::Hep3Vector g4InitPos = TrackPropagation::globalPointToHep3Vector(cmsInitPos);
+  CLHEP::Hep3Vector g4InitMom = TrackPropagation::globalVectorToHep3Vector(cmsInitMom * GeV);
+
+  debugReportTrackState("intitial", cmsInitPos, g4InitPos, cmsInitMom, g4InitMom, pDest);
+
+  // Set the mode of propagation according to the propagation direction
+  // G4ErrorMode mode = G4ErrorMode_PropForwards;
+
+  // if (!configurePropagation(mode, pDest, cmsInitPos, cmsInitMom))
+  //	return TsosPP(TrajectoryStateOnSurface(), 0.0f);
+
+  ///////////////////////////////
+  // Set the error and trajectories, and finally propagate
+  //
+  G4ErrorTrajErr g4error(5, 1);
+  if (ftsStart.hasError()) {
+    CurvilinearTrajectoryError initErr;
+    initErr = ftsStart.curvilinearError();
+    g4error = TrackPropagation::algebraicSymMatrix55ToG4ErrorTrajErr(initErr, ftsStart.charge());
+    LogDebug("Geant4e") << "CMS -  Error matrix: " << std::endl << initErr.matrix();
+  } else {
+    LogDebug("Geant4e") << "No error matrix available" << std::endl;
+    return std::pair<TrajectoryStateOnSurface, AlgebraicMatrix57>(TrajectoryStateOnSurface(), AlgebraicMatrix57());
+  }
+
+  LogDebug("Geant4e") << "G4e -  Error matrix: " << std::endl << g4error;
+
+  // in CMSSW, the state errors are deflated when performing the backward
+  // propagation
+  if (mode == G4ErrorMode_PropForwards) {
+    G4ErrorPropagatorData::GetErrorPropagatorData()->SetStage(G4ErrorStage_Inflation);
+  } else if (mode == G4ErrorMode_PropBackwards) {
+    G4ErrorPropagatorData::GetErrorPropagatorData()->SetStage(G4ErrorStage_Deflation);
+  }
+
+  G4ErrorFreeTrajState g4eTrajState(generateParticleName(ftsStart.charge()), g4InitPos, g4InitMom, g4error);
+  LogDebug("Geant4e") << "G4e -  Traj. State: " << (g4eTrajState);
+
+  //////////////////////////////
+  // Propagate
+  int iterations = 0;
+  double finalPathLength = 0;
+
+  HepGeom::Point3D<double> finalRecoPos;
+
+  G4ErrorPropagatorData::GetErrorPropagatorData()->SetMode(mode);
+
+  theG4eData->SetTarget(g4eTarget_center.second.get());
+  LogDebug("Geant4e") << "Running Propagation to the RECO surface" << std::endl;
+
+  theG4eManager->InitTrackPropagation();
+  
+  G4ErrorMatrix jac(5, 7);
+  for (unsigned int i = 0; i < 5; ++i) {
+    for (unsigned int j = 0; j < 7; ++j) {
+      jac(i+1, j+1) = i < 5 && i == j ? 1. : 0.;
+    }
+  }
+
+  bool continuePropagation = true;
+  while (continuePropagation) {
+    iterations++;
+    LogDebug("Geant4e") << std::endl << "step count " << iterations << " step length " << finalPathLength;
+
+    const int ierr = theG4eManager->PropagateOneStep(&g4eTrajState, mode);
+
+    if (ierr != 0) {
+      // propagation failed, return invalid track state
+      return std::pair<TrajectoryStateOnSurface, AlgebraicMatrix57>(TrajectoryStateOnSurface(), AlgebraicMatrix57());
+    }
+
+    const float thisPathLength = TrackPropagation::g4doubleToCmsDouble(g4eTrajState.GetG4Track()->GetStepLength());
+
+    const G4ErrorMatrix &transferMatrix = g4eTrajState.GetTransfMat();
+    
+    // transport  + nominal energy loss contribution
+    jac = transferMatrix*jac;
+    
+    //TODO assess relevance of approximations (does the order matter? position/momentum before or after step?)
+    // local b-field contribution
+    const GlobalPoint pos = TrackPropagation::hepPoint3DToGlobalPoint(g4eTrajState.GetPosition());
+    const GlobalVector mom = TrackPropagation::hep3VectorToGlobalVector(g4eTrajState.GetMomentum()) / GeV;
+    const double B = theField->inTesla(pos).mag();
+    const double pinv = 1./mom.mag();
+    
+    for (unsigned int i = 1; i < 5; ++i) {
+      jac(i+1, 5+1) += transferMatrix(i+1, 0+1)*pinv/B;
+    }
+    
+    // local material contribution
+    const double ePre = g4eTrajState.GetG4Track()->GetStep()->GetPreStepPoint()->GetTotalEnergy() / GeV;
+    const double ePost = g4eTrajState.GetG4Track()->GetStep()->GetPostStepPoint()->GetTotalEnergy() / GeV;
+    const double dE = ePost - ePre;
+    
+//     std::cout << "ePost = " << ePost << " p = " << mom.mag() << std::endl;
+    
+    jac(0+1, 6+1) += -ePost*std::pow(pinv, 3)*dE;
+    
+//     std::cout << "dE = " << dE << std::endl;
+    
+    
+//     std::cout << "jac" << std::endl;
+//     std::cout << jac << std::endl;
+    
+    LogDebug("Geant4e") << "step Length was " << thisPathLength << " cm, current global position: "
+                        << TrackPropagation::hepPoint3DToGlobalPoint(g4eTrajState.GetPosition()) << std::endl;
+
+    finalPathLength += thisPathLength;
+
+    // if (std::fabs(finalPathLength) > 10000.0f)
+    if (std::fabs(finalPathLength) > 200.0f) {
+      LogDebug("Geant4e") << "ERROR: Quitting propagation: path length mega large" << std::endl;
+      theG4eManager->GetPropagator()->InvokePostUserTrackingAction(g4eTrajState.GetG4Track());
+      continuePropagation = false;
+      LogDebug("Geant4e") << "WARNING: Quitting propagation: max path length "
+                             "exceeded, returning invalid state"
+                          << std::endl;
+
+      // reached maximum path length, bail out
+      return std::pair<TrajectoryStateOnSurface, AlgebraicMatrix57>(TrajectoryStateOnSurface(), AlgebraicMatrix57());
+    }
+
+    if (theG4eManager->GetPropagator()->CheckIfLastStep(g4eTrajState.GetG4Track())) {
+      theG4eManager->GetPropagator()->InvokePostUserTrackingAction(g4eTrajState.GetG4Track());
+      continuePropagation = false;
+    }
+  }
+
+  // CMSSW Tracking convention, backward propagations have negative path length
+  if (propagationDirection() == oppositeToMomentum)
+    finalPathLength = -finalPathLength;
+
+  // store the correct location for the hit on the RECO surface
+  LogDebug("Geant4e") << "Position on the RECO surface" << g4eTrajState.GetPosition() << std::endl;
+  finalRecoPos = g4eTrajState.GetPosition();
+
+  theG4eManager->EventTermination();
+
+  LogDebug("Geant4e") << "Final position of the Track :" << g4eTrajState.GetPosition() << std::endl;
+
+  //////////////////////////////
+  // Retrieve the state in the end from Geant4e, convert them to CMS vectors
+  // and points, and build global trajectory parameters.
+  // CMS uses cm and GeV while Geant4 uses mm and MeV
+  //
+  const HepGeom::Vector3D<double> momEnd = g4eTrajState.GetMomentum();
+
+  // use the hit on the the RECO plane as the final position to be d'accor with
+  // the RecHit measurements
+  const GlobalPoint posEndGV = TrackPropagation::hepPoint3DToGlobalPoint(finalRecoPos);
+  GlobalVector momEndGV = TrackPropagation::hep3VectorToGlobalVector(momEnd) / GeV;
+
+  debugReportTrackState("final", posEndGV, finalRecoPos, momEndGV, momEnd, pDest);
+
+  // Get the error covariance matrix from Geant4e. It comes in curvilinear
+  // coordinates so use the appropiate CMS class
+  G4ErrorTrajErr g4errorEnd = g4eTrajState.GetError();
+
+  CurvilinearTrajectoryError curvError(
+      TrackPropagation::g4ErrorTrajErrToAlgebraicSymMatrix55(g4errorEnd, ftsStart.charge()));
+
+  if (mode == G4ErrorMode_PropBackwards) {
+    GlobalTrajectoryParameters endParm(
+        posEndGV, momEndGV, ftsStart.parameters().charge(), &ftsStart.parameters().magneticField());
+
+    // flip the momentum direction because it has been flipped before running
+    // G4's backwards prop
+    momEndGV = -momEndGV;
+  }
+
+  LogDebug("Geant4e") << "G4e -  Error matrix after propagation: " << std::endl << g4errorEnd;
+
+  LogDebug("Geant4e") << "CMS -  Error matrix after propagation: " << std::endl << curvError.matrix();
+
+  GlobalTrajectoryParameters tParsDest(posEndGV, momEndGV, ftsStart.charge(), theField);
+
+  SurfaceSideDefinition::SurfaceSide side;
+
+  side = propagationDirection() == alongMomentum ? SurfaceSideDefinition::afterSurface
+                                                 : SurfaceSideDefinition::beforeSurface;
+
+  AlgebraicMatrix57 jacfinal;
+  // convert from 1/p to q/p
+  for (unsigned int i = 0; i < 5; ++i) {
+    for (unsigned int j = 0; j < 7; ++j) {
+      jacfinal(i, j) = jac(i+1, j+1);
+      if (i==0) {
+        jacfinal(i, j) *= ftsStart.charge();
+      }
+      if (j==0) {
+        jacfinal(i, j) *= ftsStart.charge();
+      }
+    }
+  }
+
+  return std::pair<TrajectoryStateOnSurface, AlgebraicMatrix57>(TrajectoryStateOnSurface(tParsDest, curvError, pDest, side), jacfinal);
+}
+
 //
 ////////////////////////////////////////////////////////////////////////////
 //

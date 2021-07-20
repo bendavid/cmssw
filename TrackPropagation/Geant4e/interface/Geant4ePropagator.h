@@ -19,6 +19,8 @@
 
 class Geant4ePropagator : public Propagator {
 public:
+  
+  typedef ROOT::Math::SMatrix<double, 5, 7, ROOT::Math::MatRepStd<double, 5, 7> > AlgebraicMatrix57;
   /** Constructor. Takes as arguments:
    *  * The magnetic field
    *  * The particle name whose properties will be used in the propagation.
@@ -79,6 +81,9 @@ public:
 
   const MagneticField *magneticField() const override { return theField; }
 
+  std::pair<TrajectoryStateOnSurface, AlgebraicMatrix57> propagateGenericWithJacobian(const FreeTrajectoryState &ftsStart,
+                                                               const Plane &pDest) const;
+  
 private:
   typedef std::pair<TrajectoryStateOnSurface, double> TsosPP;
   typedef std::pair<bool, std::shared_ptr<G4ErrorTarget>> ErrorTargetPair;
@@ -115,6 +120,7 @@ private:
   template <class SurfaceType>
   std::pair<TrajectoryStateOnSurface, double> propagateGeneric(const FreeTrajectoryState &ftsStart,
                                                                const SurfaceType &pDest) const;
+                                                               
 
   // saves the Geant4 propagation direction (Forward or Backward) in the
   // provided variable reference mode and returns true if the propagation
