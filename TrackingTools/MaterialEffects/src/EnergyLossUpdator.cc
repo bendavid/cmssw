@@ -83,7 +83,24 @@ EnergyLossUpdator::computeBetheBloch (const LocalVector& localP,
   
   Float dEdx = xi*(unsafe_logf<2>(Float(2.)*emass*emax/(poti*poti)) - Float(2.)*(beta2) - delta0);
   
+//   float dedxbare = (unsafe_logf<2>(Float(2.)*emass*emax/(poti*poti)) - Float(2.)*(beta2) - delta0)/beta2;
+//   std::cout << "dedxbare = " << dedxbare << " magp = " << sqrt(p2) << std::endl;
+  
+//   const float scale = 26.;
+//   Float dEdx = scale*materialConstants.xi()*xf;
+  
+//   float gamma2 = 1./(1.-beta2);
+//   float delta = 2.*std::log(eplasma/poti) + std::log(beta2*gamma2) - 1.;
+//   float mpv = xi*(std::log(2.*emass*beta2*gamma2/poti) + std::log(xi/poti) + 0.2 - beta2 - delta);
+//   Float dEdx = mpv;
+//   Float mpv = 2.*xi*
+    
   Float dEdx2 = xi*emax*(Float(1.)-Float(0.5)*beta2);
+//   Float dEdx2 = 1.7*1.7*xi*xi;
+//   Float dEdx2 = xi*std::min(20.f*xi, emax)*(Float(1.)-Float(0.5)*beta2);
+//   std::cout << "emax = " << emax << " dEdx = " << dEdx << " +- " << sqrt(dEdx2) << " ratio = " << sqrt(dEdx2)/dEdx <<  " k = " << dEdx/emax << " mpv = " << mpv << " mpv ratio = " << mpv/dEdx << " mpv/xi = " << mpv/xi << " magp = " << sqrt(p2) << std::endl;
+//   Float dEdx2 = dEdx*dEdx;
+//   dEdx2 = std::min(dEdx2, dEdx*dEdx);
   Float dP    = dEdx/std::sqrt(beta2);
   Float sigp2 = dEdx2/(beta2*p2*p2);
   effect.deltaP += -dP;
