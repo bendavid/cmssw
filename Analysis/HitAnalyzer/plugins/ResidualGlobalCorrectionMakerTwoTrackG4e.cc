@@ -582,7 +582,7 @@ void ResidualGlobalCorrectionMakerTwoTrackG4e::analyze(const edm::Event &iEvent,
 
       
       const unsigned int nparsAlignment = 2*nvalid + nvalidalign2d;
-      const unsigned int nparsBfield = nhits;
+      const unsigned int nparsBfield = 3*nhits;
       const unsigned int nparsEloss = nhits;
 //       const unsigned int nparsEloss = nhits + 2;
       const unsigned int npars = nparsAlignment + nparsBfield + nparsEloss;
@@ -713,7 +713,7 @@ void ResidualGlobalCorrectionMakerTwoTrackG4e::analyze(const edm::Event &iEvent,
             tree->SetBranchAddress("globalidxv", globalidxv.data());
           }
           
-          std::array<Matrix<double, 5, 7>, 2> FdFmrefarr;
+          std::array<Matrix<double, 5, 9>, 2> FdFmrefarr;
           std::array<unsigned int, 2> trackstateidxarr;
           std::array<unsigned int, 2> trackparmidxarr;
           
@@ -728,7 +728,8 @@ void ResidualGlobalCorrectionMakerTwoTrackG4e::analyze(const edm::Event &iEvent,
           
   //         std::cout << "firsthitshared = " << firsthitshared << std::endl;
           
-          double dbetavalref = 0.;
+//           double dbetavalref = 0.;
+          Matrix<double, 3, 1> dbetavalref = Matrix<double, 3, 1>::Zero();
           for (unsigned int id = 0; id < 2; ++id) {
               auto &hits = hitsarr[id];
               auto const& hit = hits[0];
@@ -736,10 +737,13 @@ void ResidualGlobalCorrectionMakerTwoTrackG4e::analyze(const edm::Event &iEvent,
               const uint32_t gluedid = trackerTopology->glued(hit->det()->geographicalId());
               const bool isglued = gluedid != 0;
               const DetId parmdetid = isglued ? DetId(gluedid) : hit->geographicalId();
-
-              const unsigned int bfieldglobalidx = detidparms.at(std::make_pair(6, parmdetid));                
               
-              const double dbetaval = corparms_[bfieldglobalidx];
+              Matrix<double, 3, 1> dbetaval;
+              for (unsigned int iparm = 0; iparm < 3; ++iparm) {
+                const unsigned int bfieldglobalidx = detidparms.at(std::make_pair(6 + iparm, parmdetid));
+                dbetaval[iparm] = corparms_[bfieldglobalidx];
+              }
+              
               dbetavalref += 0.5*dbetaval;    
           }
 
@@ -919,10 +923,13 @@ void ResidualGlobalCorrectionMakerTwoTrackG4e::analyze(const edm::Event &iEvent,
               const GeomDet* parmDet = isglued ? globalGeometry->idToDet(parmdetid) : hit->det();
               const double xifraction = isglued ? hit->det()->surface().mediumProperties().xi()/parmDet->surface().mediumProperties().xi() : 1.;
 
-              const unsigned int bfieldglobalidx = detidparms.at(std::make_pair(6, parmdetid));                
-              const unsigned int elossglobalidx = detidparms.at(std::make_pair(7, parmdetid));
+              Matrix<double, 3, 1> dbetaval;
+              for (unsigned int iparm = 0; iparm < 3; ++iparm) {
+                const unsigned int bfieldglobalidx = detidparms.at(std::make_pair(6 + iparm, parmdetid));
+                dbetaval[iparm] = corparms_[bfieldglobalidx];
+              }
               
-              const double dbetaval = corparms_[bfieldglobalidx];
+              const unsigned int elossglobalidx = detidparms.at(std::make_pair(7, parmdetid));        
               const double dxival = corparms_[elossglobalidx];
               
 //               if (ihit > 0) {
@@ -968,7 +975,7 @@ void ResidualGlobalCorrectionMakerTwoTrackG4e::analyze(const edm::Event &iEvent,
               
               updtsos = std::get<1>(propresult);
               const Matrix<double, 5, 5> Qcurv = std::get<2>(propresult);
-              const Matrix<double, 5, 7> FdFm = std::get<3>(propresult);
+              const Matrix<double, 5, 9> FdFm = std::get<3>(propresult);
               const double dEdxlast = std::get<4>(propresult);
 
 //               std::cout << "Qcurv" << std::endl;
@@ -1176,9 +1183,9 @@ void ResidualGlobalCorrectionMakerTwoTrackG4e::analyze(const edm::Event &iEvent,
                 if (ihit == 0) {                  
                   constexpr unsigned int nvtxstate = 3;
                   constexpr unsigned int nlocalstate = 8;
-                  constexpr unsigned int nlocalbfield = 1;
-                  constexpr unsigned int nlocaleloss = 1;
-                  constexpr unsigned int nlocalparms = nlocalbfield + nlocaleloss;
+//                   constexpr unsigned int nlocalbfield = 1;
+//                   constexpr unsigned int nlocaleloss = 1;
+                  constexpr unsigned int nlocalparms = 4;
                   
                   constexpr unsigned int nlocal = nvtxstate + nlocalstate + nlocalparms;
                   
@@ -1198,8 +1205,7 @@ void ResidualGlobalCorrectionMakerTwoTrackG4e::analyze(const edm::Event &iEvent,
   //                 Matrix<MSScalar, 5, 3> Fvtx = (FdFm.leftCols<5>()*jacCart2CurvRef.leftCols<3>()).cast<MSScalar>();
   //                 Matrix<MSScalar, 5, 3> Fmom = FdFm.leftCols<3>().cast<MSScalar>();
                   
-                  Matrix<MSScalar, 5, 1> Fb = FdFm.col(5).cast<MSScalar>();
-                  Matrix<MSScalar, 5, 1> Fxi = FdFm.col(6).cast<MSScalar>();
+                  Matrix<MSScalar, 5, 4> Fa = FdFm.rightCols<4>().cast<MSScalar>();
                   
                   Matrix<MSScalar, 5, 5> Hmstate = Hm.cast<MSScalar>();
                   Matrix<MSScalar, 5, 5> Hpstate = Hp.cast<MSScalar>();
@@ -1223,15 +1229,12 @@ void ResidualGlobalCorrectionMakerTwoTrackG4e::analyze(const edm::Event &iEvent,
                   }
                   
                   // initialize active scalars for correction parameters                  
-//                   MSScalar dbeta(corparms_[bfieldglobalidx]);
-                  MSScalar dbeta(0.);
-                  init_twice_active_var(dbeta, nlocal, localparmidx);
+                  Matrix<MSScalar, 4, 1> da = Matrix<MSScalar, 4, 1>::Zero();
+                  for (unsigned int j=0; j<da.size(); ++j) {
+                    init_twice_active_var(da[j], nlocal, localparmidx + j);
+                  }
                   
-//                   MSScalar dxi(corparms_[elossglobalidx]);
-                  MSScalar dxi(0.);
-                  init_twice_active_var(dxi, nlocal, localparmidx + 1);
-                  
-                  const Matrix<MSScalar, 5, 1> dprop = dx0.cast<MSScalar>() + Hpstate*du - Hmstate*Fvtx*dvtx - Hmstate*Fmom*dmom - Hmstate*Fb*dbeta - Hmstate*Fxi*dxi;
+                  const Matrix<MSScalar, 5, 1> dprop = dx0.cast<MSScalar>() + Hpstate*du - Hmstate*Fvtx*dvtx - Hmstate*Fmom*dmom - Hmstate*Fa*da;
                   const MSScalar chisq = dprop.transpose()*Qinv*dprop;
                   
                   chisq0val += chisq.value().value();
@@ -1259,9 +1262,9 @@ void ResidualGlobalCorrectionMakerTwoTrackG4e::analyze(const edm::Event &iEvent,
                   //TODO statejac stuff
                   
                   constexpr unsigned int nlocalstate = 10;
-                  constexpr unsigned int nlocalbfield = 1;
-                  constexpr unsigned int nlocaleloss = 1;
-                  constexpr unsigned int nlocalparms = nlocalbfield + nlocaleloss;
+//                   constexpr unsigned int nlocalbfield = 1;
+//                   constexpr unsigned int nlocaleloss = 1;
+                  constexpr unsigned int nlocalparms = 4;
                   
                   constexpr unsigned int nlocal = nlocalstate + nlocalparms;
                   
@@ -1274,8 +1277,7 @@ void ResidualGlobalCorrectionMakerTwoTrackG4e::analyze(const edm::Event &iEvent,
                   using MSScalar = AANT<double, nlocal>;
 
                   Matrix<MSScalar, 5, 5> Fstate = FdFm.leftCols<5>().cast<MSScalar>();
-                  Matrix<MSScalar, 5, 1> Fb = FdFm.col(5).cast<MSScalar>();
-                  Matrix<MSScalar, 5, 1> Fxi = FdFm.col(6).cast<MSScalar>();
+                  Matrix<MSScalar, 5, 4> Fa = FdFm.rightCols<4>().cast<MSScalar>();
                   
                   Matrix<MSScalar, 5, 5> Hmstate = Hm.cast<MSScalar>();
                   Matrix<MSScalar, 5, 5> Hpstate = Hp.cast<MSScalar>();
@@ -1294,15 +1296,13 @@ void ResidualGlobalCorrectionMakerTwoTrackG4e::analyze(const edm::Event &iEvent,
                     init_twice_active_var(du[j], nlocal, localstateidx + 5 + j);
                   }
                   
-//                   MSScalar dbeta(corparms_[bfieldglobalidx]);
-                  MSScalar dbeta(0.);
-                  init_twice_active_var(dbeta, nlocal, localparmidx);
-                  
-//                   MSScalar dxi(corparms_[elossglobalidx]);
-                  MSScalar dxi(0.);
-                  init_twice_active_var(dxi, nlocal, localparmidx + 1);
+                  // initialize active scalars for correction parameters                  
+                  Matrix<MSScalar, 4, 1> da = Matrix<MSScalar, 4, 1>::Zero();
+                  for (unsigned int j=0; j<da.size(); ++j) {
+                    init_twice_active_var(da[j], nlocal, localparmidx + j);
+                  }
                               
-                  const Matrix<MSScalar, 5, 1> dprop = dx0.cast<MSScalar>() + Hpstate*du - Hmstate*Fstate*dum - Hmstate*Fb*dbeta - Hmstate*Fxi*dxi;
+                  const Matrix<MSScalar, 5, 1> dprop = dx0.cast<MSScalar>() + Hpstate*du - Hmstate*Fstate*dum - Hmstate*Fa*da;
                   const MSScalar chisq = dprop.transpose()*Qinv*dprop;
                   
                   chisq0val += chisq.value().value();
@@ -1327,13 +1327,11 @@ void ResidualGlobalCorrectionMakerTwoTrackG4e::analyze(const edm::Event &iEvent,
                   
                 }
                 
-//                 const unsigned int bfieldglobalidx = detidparms.at(std::make_pair(6, parmdetid));
-                globalidxv[parmidx] = bfieldglobalidx;
-                parmidx++;
-                
-//                 const unsigned int elossglobalidx = detidparms.at(std::make_pair(7, parmdetid));
-                globalidxv[parmidx] = elossglobalidx;
-                parmidx++;
+                for (unsigned int iparm = 0; iparm < 4; ++iparm) {
+                  const unsigned int xglobalidx = detidparms.at(std::make_pair(6 + iparm, parmdetid));
+                  globalidxv[parmidx] = xglobalidx;
+                  parmidx++;
+                }
 
               }
               
@@ -1725,8 +1723,8 @@ void ResidualGlobalCorrectionMakerTwoTrackG4e::analyze(const edm::Event &iEvent,
             
   //           const double 
             
-            const Matrix<double, 5, 7> &FdFmref0 = FdFmrefarr[0];
-            const Matrix<double, 5, 7> &FdFmref1 = FdFmrefarr[1];
+//             const Matrix<double, 5, 7> &FdFmref0 = FdFmrefarr[0];
+//             const Matrix<double, 5, 7> &FdFmref1 = FdFmrefarr[1];
             
 //             JacobianCurvilinearToCartesian curv2cartref0(refFts0.parameters());
 //             auto const &jacCurv2Cartref0 = Map<const Matrix<double, 6, 5, RowMajor>>(curv2cartref0.jacobian().Array());

@@ -1164,7 +1164,7 @@ void ResidualGlobalCorrectionMakerG4e::analyze(const edm::Event &iEvent, const e
 //     const unsigned int nparsAlignment = nvalidstrip + 2*nvalidpixel;
     const unsigned int nparsAlignment = 2*nvalid + nvalidalign2d;
 //     const unsigned int nparsAlignment = 6*nvalid;
-    const unsigned int nparsBfield = nhits;
+    const unsigned int nparsBfield = 3*nhits;
     const unsigned int nparsEloss = nhits;
 //     const unsigned int nparsEloss = nhits + 1;
     const unsigned int npars = nparsAlignment + nparsBfield + nparsEloss;
@@ -1903,10 +1903,13 @@ void ResidualGlobalCorrectionMakerG4e::analyze(const edm::Event &iEvent, const e
         const GeomDet* parmDet = isglued ? globalGeometry->idToDet(parmdetid) : hit->det();
         const double xifraction = isglued ? hit->det()->surface().mediumProperties().xi()/parmDet->surface().mediumProperties().xi() : 1.;
         
-        const unsigned int bfieldglobalidx = detidparms.at(std::make_pair(6, parmdetid));                
-        const unsigned int elossglobalidx = detidparms.at(std::make_pair(7, parmdetid));
+        Matrix<double, 3, 1> dbetaval;
+        for (unsigned int iparm = 0; iparm < 3; ++iparm) {
+          const unsigned int bfieldglobalidx = detidparms.at(std::make_pair(6 + iparm, parmdetid));
+          dbetaval[iparm] = corparms_[bfieldglobalidx];
+        }
         
-        const double dbetaval = corparms_[bfieldglobalidx];
+        const unsigned int elossglobalidx = detidparms.at(std::make_pair(7, parmdetid));        
         const double dxival = corparms_[elossglobalidx];
         
         const PSimHit *simhit = nullptr;
@@ -1989,7 +1992,7 @@ void ResidualGlobalCorrectionMakerG4e::analyze(const edm::Event &iEvent, const e
         
         updtsos = std::get<1>(propresult);
         const Matrix<double, 5, 5> Qcurv = std::get<2>(propresult);
-        const Matrix<double, 5, 7> FdFm = std::get<3>(propresult);
+        const Matrix<double, 5, 9> FdFm = std::get<3>(propresult);
         const double dEdxlast = std::get<4>(propresult);
 //         const Matrix<double, 5, 5> dQcurv = std::get<5>(propresult);
         
@@ -2429,11 +2432,11 @@ void ResidualGlobalCorrectionMakerG4e::analyze(const edm::Event &iEvent, const e
           if (true) {
 
             constexpr unsigned int nlocalstate = 10;
-            constexpr unsigned int nlocalbfield = 1;
-            constexpr unsigned int nlocaleloss = 1;
-            constexpr unsigned int nlocalparms = nlocalbfield + nlocaleloss;
+//             constexpr unsigned int nlocalbfield = 1;
+//             constexpr unsigned int nlocaleloss = 1;
+            constexpr unsigned int nlocalparms = 4;
             
-            constexpr unsigned int nlocal = nlocalstate + nlocalbfield + nlocaleloss;
+            constexpr unsigned int nlocal = nlocalstate + nlocalparms;
             
             using MSScalar = AANT<double, nlocal>;
             
@@ -2446,8 +2449,7 @@ void ResidualGlobalCorrectionMakerG4e::analyze(const edm::Event &iEvent, const e
             
             
             Matrix<MSScalar, 5, 5> Fstate = FdFm.leftCols<5>().cast<MSScalar>();
-            Matrix<MSScalar, 5, 1> Fb = FdFm.col(5).cast<MSScalar>();
-            Matrix<MSScalar, 5, 1> Fxi = FdFm.col(6).cast<MSScalar>();
+            Matrix<MSScalar, 5, 4> Fa = FdFm.rightCols<4>().cast<MSScalar>();
             
             Matrix<MSScalar, 5, 5> Hmstate = Hm.cast<MSScalar>();
             Matrix<MSScalar, 5, 5> Hpstate = Hp.cast<MSScalar>();
@@ -2466,13 +2468,12 @@ void ResidualGlobalCorrectionMakerG4e::analyze(const edm::Event &iEvent, const e
               init_twice_active_var(du[j], nlocal, localstateidx + 5 + j);
             }
             
-            MSScalar dbeta(0.);
-            init_twice_active_var(dbeta, nlocal, localparmidx);
-
-            MSScalar dxi(0.);
-            init_twice_active_var(dxi, nlocal, localparmidx + 1);
+            Matrix<MSScalar, 4, 1> da = Matrix<MSScalar, 4, 1>::Zero();
+            for (unsigned int j=0; j<da.size(); ++j) {
+              init_twice_active_var(da[j], nlocal, localparmidx + j);
+            }
                         
-            const Matrix<MSScalar, 5, 1> dprop = dx0.cast<MSScalar>() + Hpstate*du - Hmstate*Fstate*dum - Hmstate*Fb*dbeta - Hmstate*Fxi*dxi;
+            const Matrix<MSScalar, 5, 1> dprop = dx0.cast<MSScalar>() + Hpstate*du - Hmstate*Fstate*dum - Hmstate*Fa*da;
 //             const Matrix<MSScalar, 5, 1> dprop = dx0.cast<MSScalar>() + du - Fstate*dum - Fb*dbeta;
             
             
@@ -2488,7 +2489,7 @@ void ResidualGlobalCorrectionMakerG4e::analyze(const edm::Event &iEvent, const e
 //               const Matrix<MSScalar, 5, 5> dQdxi = dQ.cast<MSScalar>();
 //               const Matrix<MSScalar, 5, 5> Qinvfull = (1. - dxi)*Qinv;
 //               const Matrix<MSScalar, 5, 5> Qinvfull = Qinv/(1. + dxi);
-              const Matrix<MSScalar, 5, 5> Qinvfull = Qinv*(1. - dxi);
+              const Matrix<MSScalar, 5, 5> Qinvfull = Qinv*(1. - da[3]);
 //               const Matrix<MSScalar, 5, 5> Qinvfull = Qinv - dxi*Qinv*dQdxi*Qinv;
               chisq = dprop.transpose()*Qinvfull*dprop;
 //               chisq = dprop.transpose()*Qinvfull*dprop + 5.*internal::log(1. + dxi);
@@ -2582,7 +2583,7 @@ void ResidualGlobalCorrectionMakerG4e::analyze(const edm::Event &iEvent, const e
             }
             
             if (islikelihood) {
-              const double fact = 1./(1. - dxi.value().value());
+              const double fact = 1./(1. - da[3].value().value());
               gradlocal[localparmidx + 1] += 5.*fact;
               hesslocal(localparmidx + 1, localparmidx + 1) += 5.*fact*fact;
             }
@@ -2612,13 +2613,12 @@ void ResidualGlobalCorrectionMakerG4e::analyze(const edm::Event &iEvent, const e
 
           }
           
-          const unsigned int bfieldglobalidx = detidparms.at(std::make_pair(6, parmdetid));
-          globalidxv[parmidx] = bfieldglobalidx;
-          parmidx++;
           
-          const unsigned int elossglobalidx = detidparms.at(std::make_pair(7, parmdetid));
-          globalidxv[parmidx] = elossglobalidx;
-          parmidx++;
+          for (unsigned int iparm = 0; iparm < 4; ++iparm) {
+            const unsigned int xglobalidx = detidparms.at(std::make_pair(6 + iparm, parmdetid));
+            globalidxv[parmidx] = xglobalidx;
+            parmidx++;
+          }
           
           //backwards propagation jacobian (local to local) to be used at the next layer
 //           FdFm = curv2curvTransportJacobian(*updtsos.freeState(), propresult, false);

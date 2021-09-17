@@ -90,8 +90,8 @@ public:
   std::tuple<TrajectoryStateOnSurface, Geant4ePropagator::AlgebraicMatrix57, AlgebraicMatrix55, double> propagateGenericWithJacobianAlt(const FreeTrajectoryState &ftsStart,
                                                                const Plane &pDest) const;
                                                                
-  std::tuple<bool, Eigen::Matrix<double, 7, 1>, Eigen::Matrix<double, 5, 5>, Eigen::Matrix<double, 5, 7>, double, Eigen::Matrix<double, 5, 5>> propagateGenericWithJacobianAltD(const Eigen::Matrix<double, 7, 1> &ftsStart,
-                                                                                const GloballyPositioned<double> &pDest, double dBz = 0., double dxi = 0., double pforced = -1.) const;
+  std::tuple<bool, Eigen::Matrix<double, 7, 1>, Eigen::Matrix<double, 5, 5>, Eigen::Matrix<double, 5, 9>, double, Eigen::Matrix<double, 5, 5>> propagateGenericWithJacobianAltD(const Eigen::Matrix<double, 7, 1> &ftsStart,
+                                                                                const GloballyPositioned<double> &pDest, const Eigen::Matrix<double, 3, 1> &dB, double dxi = 0., double pforced = -1.) const;
   
 private:
   typedef std::pair<TrajectoryStateOnSurface, double> TsosPP;
@@ -192,7 +192,7 @@ private:
   
   Eigen::Matrix<double, 5, 7> transportJacobianBz(const FreeTrajectoryState &start, double s, double dEdx, double mass) const;
   
-  Eigen::Matrix<double, 5, 7> transportJacobianBzD(const Eigen::Matrix<double, 7, 1> &start, double s, double dEdx, double mass, double dBz) const;
+  Eigen::Matrix<double, 5, 9> transportJacobianBzD(const Eigen::Matrix<double, 7, 1> &start, double s, double dEdx, double mass, const Eigen::Matrix<double, 3, 1> &dB) const;
   
   Eigen::Matrix<double, 5, 7> transportJacobianD(const Eigen::Matrix<double, 7, 1> &start, double s, double dEdx, double mass) const;
 

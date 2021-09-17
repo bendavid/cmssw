@@ -340,6 +340,8 @@ ResidualGlobalCorrectionMakerBase::beginRun(edm::Run const& run, edm::EventSetup
       // bfield and material parameters are associated to glued detids where applicable
       parmset.emplace(6, parmdetid);
       parmset.emplace(7, parmdetid);
+      parmset.emplace(8, parmdetid);
+      parmset.emplace(9, parmdetid);
     }
   }
   
@@ -410,7 +412,7 @@ ResidualGlobalCorrectionMakerBase::beginRun(edm::Run const& run, edm::EventSetup
       iidx = globalidx;
       parmtype = key.first;
       
-      if (parmtype < 8) {
+      if (parmtype < 10) {
       
         const DetId& detid = key.second;
         const GeomDet* det = globalGeometry->idToDet(detid);
@@ -1370,11 +1372,11 @@ Matrix<double, 5, 6> ResidualGlobalCorrectionMakerBase::hybrid2curvJacobian(cons
 
 }
 
-Matrix<double, 5, 6> ResidualGlobalCorrectionMakerBase::hybrid2curvJacobianD(const Matrix<double, 7, 1> &state, const MagneticField *field, double dBz) const {
+Matrix<double, 5, 6> ResidualGlobalCorrectionMakerBase::hybrid2curvJacobianD(const Matrix<double, 7, 1> &state, const MagneticField *field, const Matrix<double, 3, 1> &dB) const {
   
   const GlobalPoint pos(state[0], state[1], state[2]);  
   const GlobalVector &bfield = field->inInverseGeV(pos);
-  const Matrix<double, 3, 1> Bv(bfield.x(), bfield.y(), double(bfield.z()) + 2.99792458e-3*dBz);
+  const Matrix<double, 3, 1> Bv = Matrix<double, 3, 1>(bfield.x(), bfield.y(), bfield.z()) + 2.99792458e-3*dB;
   
   const double q = state[6];
   
@@ -2615,12 +2617,12 @@ Matrix<double, 5, 5> ResidualGlobalCorrectionMakerBase::curv2localJacobianAltelo
 // 
 // }
 
-Matrix<double, 5, 5> ResidualGlobalCorrectionMakerBase::curv2localJacobianAltelossD(const Matrix<double, 7, 1> &state, const MagneticField *field, const GloballyPositioned<double> &surface, double dEdx, double mass, double dBz) const {
+Matrix<double, 5, 5> ResidualGlobalCorrectionMakerBase::curv2localJacobianAltelossD(const Matrix<double, 7, 1> &state, const MagneticField *field, const GloballyPositioned<double> &surface, double dEdx, double mass, const Matrix<double, 3, 1> &dB) const {
   
   
   const GlobalPoint pos(state[0], state[1], state[2]);  
   const GlobalVector &bfield = field->inInverseGeV(pos);
-  const Matrix<double, 3, 1> Bv(bfield.x(), bfield.y(), double(bfield.z()) + 2.99792458e-3*dBz);
+  const Matrix<double, 3, 1> Bv = Matrix<double, 3, 1>(bfield.x(), bfield.y(), bfield.z()) + 2.99792458e-3*dB;
   
   const double q = state[6];
   
