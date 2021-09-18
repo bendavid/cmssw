@@ -1287,10 +1287,10 @@ void ResidualGlobalCorrectionMakerG4e::analyze(const edm::Event &iEvent, const e
     globalidxv.clear();
     globalidxv.resize(npars, 0);
     
-//     nParms = npars;
-//     if (fillTrackTree_) {
-//       tree->SetBranchAddress("globalidxv", globalidxv.data());
-//     }
+    nParms = npars;
+    if (fillTrackTree_) {
+      tree->SetBranchAddress("globalidxv", globalidxv.data());
+    }
     
 //     TrajectoryStateOnSurface currtsos;
     
@@ -3468,42 +3468,7 @@ void ResidualGlobalCorrectionMakerG4e::analyze(const edm::Event &iEvent, const e
     auto const& d2chisqdxdparms = hessfull.topRightCorner(nstateparms, npars);
     auto const& d2chisqdparms2 = hessfull.bottomRightCorner(npars, npars);
     
-    std::unordered_map<unsigned int, unsigned int> idxmap;
-    
-    globalidxvfinal.clear();
-    globalidxvfinal.reserve(npars);
-    idxmap.reserve(npars);
-    
-    for (unsigned int idx : globalidxv) {
-      if (!idxmap.count(idx)) {
-        idxmap[idx] = globalidxvfinal.size();
-        globalidxvfinal.push_back(idx);
-      }
-    }
-    
-    const unsigned int nparsfinal = globalidxvfinal.size();
-    
-    VectorXd dchisqdparmsfinal = VectorXd::Zero(nparsfinal);
-    MatrixXd d2chisqdxdparmsfinal = MatrixXd::Zero(nstateparms, nparsfinal);
-    MatrixXd d2chisqdparms2final = MatrixXd::Zero(nparsfinal, nparsfinal);
-    
-    for (unsigned int i = 0; i < npars; ++i) {
-      const unsigned int iidx = idxmap.at(globalidxv[i]);
-      dchisqdparmsfinal[iidx] += dchisqdparms[i];
-      d2chisqdxdparmsfinal.col(iidx) += d2chisqdxdparms.col(i);
-      for (unsigned int j = 0; j < npars; ++j) {
-        const unsigned int jidx = idxmap.at(globalidxv[j]);
-        d2chisqdparms2final(iidx, jidx) += d2chisqdparms2(i, j);
-      }
-    }
-    
-    dxdparms = -Cinvd.solve(d2chisqdxdparmsfinal).transpose();
-    
-//     grad = dchisqdparmsfinal + dxdparms*dchisqdx; 
-    grad = dchisqdparmsfinal + d2chisqdxdparmsfinal.transpose()*dxfull;
-    hess = d2chisqdparms2final + dxdparms*d2chisqdxdparmsfinal;
-    
-//     dxdparms = -Cinvd.solve(d2chisqdxdparms).transpose();
+    dxdparms = -Cinvd.solve(d2chisqdxdparms).transpose();
     
     
 //     if (islikelihood) {
@@ -3520,10 +3485,10 @@ void ResidualGlobalCorrectionMakerG4e::analyze(const edm::Event &iEvent, const e
 //       std::cout << dxdparms.leftCols<5>() << std::endl;
 //     }
     
-//     grad = dchisqdparms + dxdparms*dchisqdx;
+    grad = dchisqdparms + dxdparms*dchisqdx;
     //TODO check the simplification
 //     hess = d2chisqdparms2 + 2.*dxdparms*d2chisqdxdparms + dxdparms*d2chisqdx2*dxdparms.transpose();
-//     hess = d2chisqdparms2 + dxdparms*d2chisqdxdparms;
+    hess = d2chisqdparms2 + dxdparms*d2chisqdxdparms;
     
 //     std::cout << "grad:" << std::endl;
 //     std::cout << grad.transpose() << std::endl;
@@ -3560,16 +3525,13 @@ void ResidualGlobalCorrectionMakerG4e::analyze(const edm::Event &iEvent, const e
 //     std::cout << "hess.bottomRightCorner<6, 6>():" << std::endl;
 //     std::cout << hess.bottomRightCorner<6, 6>() << std::endl;
     
-    nParms = nparsfinal;
-
-    
     gradv.clear();
     jacrefv.clear();
 
-    gradv.resize(nparsfinal,0.);
-    jacrefv.resize(5*nparsfinal, 0.);
+    gradv.resize(npars,0.);
+    jacrefv.resize(5*npars, 0.);
     
-    nJacRef = 5*nparsfinal;
+    nJacRef = 5*npars;
     if (fillTrackTree_ && fillGrads_) {
       tree->SetBranchAddress("gradv", gradv.data());
     }
@@ -3578,8 +3540,8 @@ void ResidualGlobalCorrectionMakerG4e::analyze(const edm::Event &iEvent, const e
     }
     
     //eigen representation of the underlying vector storage
-    Map<VectorXf> gradout(gradv.data(), nparsfinal);
-    Map<Matrix<float, 5, Dynamic, RowMajor> > jacrefout(jacrefv.data(), 5, nparsfinal);
+    Map<VectorXf> gradout(gradv.data(), npars);
+    Map<Matrix<float, 5, Dynamic, RowMajor> > jacrefout(jacrefv.data(), 5, npars);
     
 //     jacrefout = dxdparms.leftCols<5>().transpose().cast<float>();    
     jacrefout = ( (dxdparms).leftCols<5>().transpose() ).cast<float>();  
@@ -3633,7 +3595,7 @@ void ResidualGlobalCorrectionMakerG4e::analyze(const edm::Event &iEvent, const e
     float refPt = dogen ? genpart->pt() : std::abs(1./refParms[0])*std::sin(M_PI_2 - refParms[1]);
 
     gradmax = 0.;
-    for (unsigned int i=0; i<nparsfinal; ++i) {
+    for (unsigned int i=0; i<npars; ++i) {
       const float absval = std::abs(grad[i]);
       if (absval>gradmax) {
         gradmax = absval;
@@ -3642,10 +3604,10 @@ void ResidualGlobalCorrectionMakerG4e::analyze(const edm::Event &iEvent, const e
     
     
     hessmax = 0.;
-    for (unsigned int i=0; i<nparsfinal; ++i) {
-      for (unsigned int j=i; j<nparsfinal; ++j) {
-        const unsigned int iidx = globalidxvfinal[i];
-        const unsigned int jidx = globalidxvfinal[j];
+    for (unsigned int i=0; i<npars; ++i) {
+      for (unsigned int j=i; j<npars; ++j) {
+        const unsigned int iidx = globalidxv[i];
+        const unsigned int jidx = globalidxv[j];
         
         const float absval = std::abs(hess(i,j));
         if (absval>hessmax) {
@@ -3658,15 +3620,15 @@ void ResidualGlobalCorrectionMakerG4e::analyze(const edm::Event &iEvent, const e
     
 //     if (gradmax < 1e5 && refPt > 5.5) {
 //       //fill aggregrate gradient and hessian
-//       for (unsigned int i=0; i<nparsfinal; ++i) {
-//         gradagg[globalidxvfinal[i]] += grad[i];
+//       for (unsigned int i=0; i<npars; ++i) {
+//         gradagg[globalidxv[i]] += grad[i];
 //       }
 //       
 //       hessmax = 0.;
-//       for (unsigned int i=0; i<nparsfinal; ++i) {
-//         for (unsigned int j=i; j<nparsfinal; ++j) {
-//           const unsigned int iidx = globalidxvfinal[i];
-//           const unsigned int jidx = globalidxvfinal[j];
+//       for (unsigned int i=0; i<npars; ++i) {
+//         for (unsigned int j=i; j<npars; ++j) {
+//           const unsigned int iidx = globalidxv[i];
+//           const unsigned int jidx = globalidxv[j];
 //           
 //           const float absval = std::abs(hess(i,j));
 //           if (absval>hessmax) {
@@ -3714,7 +3676,7 @@ void ResidualGlobalCorrectionMakerG4e::analyze(const edm::Event &iEvent, const e
 //     std::cout << (dxdparms.transpose()*d2chisqdx2*dxdparms).diagonal() << std::endl;
     
     //fill packed hessian and indices
-    const unsigned int nsym = nparsfinal*(1+nparsfinal)/2;
+    const unsigned int nsym = npars*(1+npars)/2;
     hesspackedv.clear();    
     hesspackedv.resize(nsym, 0.);
     
@@ -3724,11 +3686,11 @@ void ResidualGlobalCorrectionMakerG4e::analyze(const edm::Event &iEvent, const e
     }
     
     Map<VectorXf> hesspacked(hesspackedv.data(), nsym);
-    const Map<const VectorXu> globalidx(globalidxvfinal.data(), nparsfinal);
+    const Map<const VectorXu> globalidx(globalidxv.data(), npars);
 
     unsigned int packedidx = 0;
-    for (unsigned int ipar = 0; ipar < nparsfinal; ++ipar) {
-      const unsigned int segmentsize = nparsfinal - ipar;
+    for (unsigned int ipar = 0; ipar < npars; ++ipar) {
+      const unsigned int segmentsize = npars - ipar;
       hesspacked.segment(packedidx, segmentsize) = hess.block<1, Dynamic>(ipar, ipar, 1, segmentsize).cast<float>();
       packedidx += segmentsize;
     }
