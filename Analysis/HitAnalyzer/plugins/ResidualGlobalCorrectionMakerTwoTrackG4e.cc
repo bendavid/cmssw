@@ -929,7 +929,7 @@ void ResidualGlobalCorrectionMakerTwoTrackG4e::analyze(const edm::Event &iEvent,
                 dbetaval[iparm] = corparms_[bfieldglobalidx];
               }
               
-              const unsigned int elossglobalidx = detidparms.at(std::make_pair(7, parmdetid));        
+              const unsigned int elossglobalidx = detidparms.at(std::make_pair(9, parmdetid));        
               const double dxival = corparms_[elossglobalidx];
               
 //               if (ihit > 0) {

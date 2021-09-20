@@ -1909,7 +1909,7 @@ void ResidualGlobalCorrectionMakerG4e::analyze(const edm::Event &iEvent, const e
           dbetaval[iparm] = corparms_[bfieldglobalidx];
         }
         
-        const unsigned int elossglobalidx = detidparms.at(std::make_pair(7, parmdetid));        
+        const unsigned int elossglobalidx = detidparms.at(std::make_pair(9, parmdetid));        
         const double dxival = corparms_[elossglobalidx];
         
         const PSimHit *simhit = nullptr;
