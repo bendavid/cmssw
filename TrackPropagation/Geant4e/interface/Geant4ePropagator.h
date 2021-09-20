@@ -194,6 +194,8 @@ private:
   
   Eigen::Matrix<double, 5, 9> transportJacobianBzD(const Eigen::Matrix<double, 7, 1> &start, double s, double dEdx, double mass, const Eigen::Matrix<double, 3, 1> &dB) const;
   
+  Eigen::Matrix<double, 5, 7> transportJacobianBzDold(const Eigen::Matrix<double, 7, 1> &start, double s, double dEdx, double mass, double dBz) const;
+  
   Eigen::Matrix<double, 5, 7> transportJacobianD(const Eigen::Matrix<double, 7, 1> &start, double s, double dEdx, double mass) const;
 
 
