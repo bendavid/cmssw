@@ -39,6 +39,7 @@
 <use name="RecoVertex/KinematicFit"/>
 <use name="Alignment/CommonAlignment"/>
 <use name="TrackPropagation/Geant4e"/>
+<use name="DataFormats/NanoAOD"/>
 
 <!-- <use   name="geant4"/> -->
 

@@ -19,6 +19,8 @@
 #include "RecoVertex/KinematicFit/interface/CombinedKinematicConstraint.h"
 #include "DataFormats/MuonReco/interface/Muon.h"
 #include "DataFormats/Math/interface/deltaR.h"
+#include "DataFormats/VertexReco/interface/VertexFwd.h"
+#include "DataFormats/NanoAOD/interface/FlatTable.h"
 
 #include "Math/Vector4Dfwd.h"
 
@@ -40,11 +42,32 @@ private:
   virtual void beginStream(edm::StreamID) override;
   virtual void produce(edm::Event &, const edm::EventSetup &) override;
   
+  edm::EDGetTokenT<reco::VertexCollection> inputVertices_;
+  edm::EDGetTokenT<nanoaod::FlatTable> inputTriggerObjects_;
+
   bool doVtxConstraint_;
   bool doMassConstraint_;
   double massConstraint_;
   double massConstraintWidth_;
-  
+  bool doTriggerMatch_;
+
+  float Beamspot_x0;
+  float Beamspot_y0;
+  float Beamspot_z0;
+  float Beamspot_sigmaZ;
+  float Beamspot_dxdz;
+  float Beamspot_dydz;
+  float Beamspot_widthX;
+  float Beamspot_widthY;
+
+  float pv0_x;
+  float pv0_y;
+  float pv0_z;
+
+  float pvclosest_x;
+  float pvclosest_y;
+  float pvclosest_z;
+
   float Jpsi_d;
   float Jpsi_x;
   float Jpsi_y;
@@ -187,6 +210,12 @@ private:
   bool Muminus_muonIsStandalone;
   bool Muminus_muonInnerTrackBest;
 
+  bool Muplus_isoMu24;
+  bool Muplus_isoTkMu24;
+
+  bool Muminus_isoMu24;
+  bool Muminus_isoTkMu24;
+
   float edmval_cons0;
   int niter_cons0;
 
@@ -209,6 +238,13 @@ ResidualGlobalCorrectionMakerTwoTrackG4e::ResidualGlobalCorrectionMakerTwoTrackG
   doMassConstraint_ = iConfig.getParameter<bool>("doMassConstraint");
   massConstraint_ = iConfig.getParameter<double>("massConstraint");
   massConstraintWidth_ = iConfig.getParameter<double>("massConstraintWidth");
+  doTriggerMatch_ = iConfig.getParameter<bool>("doTriggerMatch");
+  inputVertices_ = consumes<reco::VertexCollection>(iConfig.getParameter<edm::InputTag>("vertices"));
+
+  if (doTriggerMatch_) {
+    inputTriggerObjects_ = consumes<nanoaod::FlatTable>(edm::InputTag("triggerObjectTable"));
+  }
+
 }
 
 void ResidualGlobalCorrectionMakerTwoTrackG4e::beginStream(edm::StreamID streamid)
@@ -216,6 +252,24 @@ void ResidualGlobalCorrectionMakerTwoTrackG4e::beginStream(edm::StreamID streami
   ResidualGlobalCorrectionMakerBase::beginStream(streamid);
   
   if (fillTrackTree_) {
+
+    tree->Branch("Beamspot_x0", &Beamspot_x0 );
+    tree->Branch("Beamspot_y0", &Beamspot_y0 );
+    tree->Branch("Beamspot_z0", &Beamspot_z0 );
+    tree->Branch("Beamspot_sigmaZ", &Beamspot_sigmaZ );
+    tree->Branch("Beamspot_dxdz", &Beamspot_dxdz );
+    tree->Branch("Beamspot_dydz", &Beamspot_dydz );
+    tree->Branch("Beamspot_widthX", &Beamspot_widthX );
+    tree->Branch("Beamspot_widthY", &Beamspot_widthY );
+
+    tree->Branch("pv0_x", &pv0_x );
+    tree->Branch("pv0_y", &pv0_y );
+    tree->Branch("pv0_z", &pv0_z );
+
+    tree->Branch("pvclosest_x", &pvclosest_x );
+    tree->Branch("pvclosest_y", &pvclosest_y );
+    tree->Branch("pvclosest_z", &pvclosest_z );
+
     tree->Branch("Jpsi_d", &Jpsi_d);
     tree->Branch("Jpsi_x", &Jpsi_x);
     tree->Branch("Jpsi_y", &Jpsi_y);
@@ -360,6 +414,12 @@ void ResidualGlobalCorrectionMakerTwoTrackG4e::beginStream(edm::StreamID streami
     tree->Branch("Muminus_muonIsStandalone", &Muminus_muonIsStandalone);
     tree->Branch("Muminus_muonInnerTrackBest", &Muminus_muonInnerTrackBest);
 
+    tree->Branch("Muplus_isoMu24", &Muplus_isoMu24);
+    tree->Branch("Muplus_isoTkMu24", &Muplus_isoTkMu24);
+
+    tree->Branch("Muminus_isoMu24", &Muminus_isoMu24);
+    tree->Branch("Muminus_isoTkMu24", &Muminus_isoTkMu24);
+
     tree->Branch("edmval_cons0", &edmval_cons0);
     tree->Branch("niter_cons0", &niter_cons0);
 
@@ -448,6 +508,14 @@ void ResidualGlobalCorrectionMakerTwoTrackG4e::produce(edm::Event &iEvent, const
 
   Handle<reco::BeamSpot> bsH;
   iEvent.getByToken(inputBs_, bsH);
+
+  Handle<reco::VertexCollection> vertices;
+  iEvent.getByToken(inputVertices_, vertices);
+
+  Handle<nanoaod::FlatTable> triggerObjects;
+  if (doTriggerMatch_) {
+    iEvent.getByToken(inputTriggerObjects_, triggerObjects);
+  }
   
   constexpr double mmu = 0.1056583745;
   constexpr double mmuerr = 0.0000000024;
@@ -470,6 +538,30 @@ void ResidualGlobalCorrectionMakerTwoTrackG4e::produce(edm::Event &iEvent, const
   run = iEvent.run();
   lumi = iEvent.luminosityBlock();
   event = iEvent.id().event();
+
+  Beamspot_x0 = bsH->x0();
+  Beamspot_y0 = bsH->y0();
+  Beamspot_z0 = bsH->z0();
+  Beamspot_sigmaZ = bsH->sigmaZ();
+  Beamspot_dxdz = bsH->dxdz();
+  Beamspot_dydz = bsH->dydz();
+  Beamspot_widthX = bsH->BeamWidthX();
+  Beamspot_widthY = bsH->BeamWidthY();
+
+
+  pv0_x = -99.;
+  pv0_y = -99.;
+  pv0_z = -99.;
+
+  if (vertices->size() > 0) {
+    pv0_x = vertices->front().x();
+    pv0_y = vertices->front().y();
+    pv0_z = vertices->front().z();
+  }
+
+  // tree->Branch("pv0_x", &pv0_x );
+  // tree->Branch("pv0_y", &pv0_y );
+  // tree->Branch("pv0_z", &pv0_z );
 
   genweight = 1.;
   if (doGen_) {
@@ -510,10 +602,7 @@ void ResidualGlobalCorrectionMakerTwoTrackG4e::produce(edm::Event &iEvent, const
       triggerNamesId_ = triggerNames.parameterSetID();
     }
     
-    
-    
-    
-    
+
     // set trigger decision bits
     for (std::size_t itrig = 0; itrig < triggerIdxs_.size(); ++itrig) {
       const std::size_t idx = triggerIdxs_[itrig];
@@ -2177,6 +2266,26 @@ void ResidualGlobalCorrectionMakerTwoTrackG4e::produce(edm::Event &iEvent, const
             Jpsicons_phi = jpsimom.phi();
             Jpsicons_mass = jpsimom.mass();
           }
+
+          pvclosest_x = -99.;
+          pvclosest_y = -99.;
+          pvclosest_z = -99.;
+
+          const auto theptinv2 = 1./jpsimom.pt()/jpsimom.pt();
+          double mindz = std::numeric_limits<double>::max();
+          for (auto const &vtx : *vertices) {
+
+            const double dz = (statepcaupd[9] - vtx.z()) - ((statepcaupd[7] - vtx.x()) * jpsimom.px() + (statepcaupd[8] - vtx.y()) * jpsimom.py()) * jpsimom.pz() * theptinv2;
+
+            const double absdz = std::fabs(dz);
+
+            if (absdz < mindz) {
+              mindz = absdz;
+              pvclosest_x = vtx.x();
+              pvclosest_y = vtx.y();
+              pvclosest_z = vtx.z();
+            }
+          }
           
           Muplus_nhits = nhitsarr[idxplus];
           Muplus_nvalid = nvalidarr[idxplus];
@@ -2361,6 +2470,45 @@ void ResidualGlobalCorrectionMakerTwoTrackG4e::produce(edm::Event &iEvent, const
             }
 
           }
+
+          Muplus_isoMu24 = false;
+          Muplus_isoTkMu24 = false;
+          Muminus_isoMu24 = false;
+          Muminus_isoTkMu24 = false;
+
+          if (doTriggerMatch_) {
+
+            auto const &trigObjEta = triggerObjects->columnData<float>(triggerObjects->columnIndex("eta"));
+            auto const &trigObjPhi = triggerObjects->columnData<float>(triggerObjects->columnIndex("phi"));
+            auto const &trigObjQuality = triggerObjects->columnData<int>(triggerObjects->columnIndex("filterBits"));
+
+            auto const ntrig = trigObjEta.size();
+            for (std::size_t itrig = 0; itrig < ntrig; ++itrig) {
+              const bool isoMu24 = trigObjQuality[itrig] & 16;
+              const bool isoTkMu24 = trigObjQuality[itrig] & 32;
+
+              const ROOT::Math::PtEtaPhiMVector trigdir(1., trigObjEta[itrig], trigObjPhi[itrig], 0.);
+
+
+
+              const double drplus = deltaR(trigdir, muarr[idxplus]);
+              const double drminus = deltaR(trigdir, muarr[idxminus]);
+
+              if (drplus < 0.1) {
+                Muplus_isoMu24 |= isoMu24;
+                Muplus_isoTkMu24 |= isoTkMu24;
+              }
+
+              if (drminus < 0.1) {
+                Muminus_isoMu24 |= isoMu24;
+                Muminus_isoTkMu24 |= isoTkMu24;
+              }
+
+
+            }
+
+          }
+
           
           
       //     const Vector5d dxRef = dxfull.head<5>();
