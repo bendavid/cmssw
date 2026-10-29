@@ -3,19 +3,22 @@ import FWCore.ParameterSet.Config as cms
 # Extra event content for the resonance TkAl ALCARECO streams.
 
 # Trigger content needed to fill the HLT and L1 bits and the trigger objects
-# (TrigObj, matching of offline muons to L1/HLT objects) downstream:
-#   - hltTriggerSummaryAOD: HLT objects and their filter keys
+# (TrigObj, matching of offline muons to L1/HLT objects) downstream, i.e. the
+# MiniAOD trigger content:
+#   - slimmedPatTrigger (TkAlTriggerObjects_cff): HLT objects with their packed
+#     filter labels and path names, from hltTriggerSummaryAOD (~0.7 instead of
+#     ~4.7 kB/event in UL16 J/psi MC)
 #   - gtStage2Digis (algorithm and external blocks only, the GT input object
 #     copies are redundant with gmtStage2Digis/caloStage2Digis): L1 algorithm
 #     decisions (initial/final, prescale column)
 #   - gmtStage2Digis:Muon, caloStage2Digis:{EGamma,EtSum,Jet,Tau}: L1 objects
 #     read by the NanoAOD TriggerObjectTableProducer
-# Not included: hltGtStage2ObjectMap (L1 seed object combinations, ~5.5 kB/event
-# in UL16 J/psi MC, more than all of the above together); add
-# 'keep *_hltGtStage2ObjectMap_*_*' if needed.
+# Not included: hltTriggerSummaryAOD (add 'keep triggerTriggerEvent_hltTriggerSummaryAOD_*_*'
+# for the full HLT summary) and hltGtStage2ObjectMap (L1 seed object
+# combinations, ~5.5 kB/event in UL16 J/psi MC; 'keep *_hltGtStage2ObjectMap_*_*').
 # The legacy gtDigis record kept by the stock streams is empty for Stage-2.
 TkAlTriggerOutputCommands = cms.untracked.vstring(
-    'keep triggerTriggerEvent_hltTriggerSummaryAOD_*_*',
+    'keep *_slimmedPatTrigger_*_*',
     'keep *_gtStage2Digis__*',
     'keep *_gmtStage2Digis_Muon_*',
     'keep *_caloStage2Digis_EGamma_*',

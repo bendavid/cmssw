@@ -99,3 +99,7 @@ seqALCARECOTkAlDstToD0Pi = cms.Sequence(ALCARECOTkAlDstToD0PiDCSFilter+
                                         ALCARECOTkAlDstToD0PiDeDxHarmonic2+
                                         ALCARECOTkAlDstToD0PiDeDxPixelHarmonic2+
                                         ALCARECOTkAlDstToD0PiDeDxAllHarmonic2)
+
+# MiniAOD trigger objects (slimmedPatTrigger) for the accepted events
+from Alignment.CommonAlignmentProducer.TkAlTriggerObjects_cff import *
+seqALCARECOTkAlDstToD0Pi += seqTkAlTriggerObjects

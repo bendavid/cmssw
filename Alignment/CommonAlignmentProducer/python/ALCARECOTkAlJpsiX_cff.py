@@ -397,3 +397,7 @@ seqALCARECOTkAlJpsiX = cms.Sequence(
     ALCARECOTkAlJpsiXBcResonances +
     ALCARECOTkAlJpsiXJpsiOnlyResonances
 )
+
+# MiniAOD trigger objects (slimmedPatTrigger) for the accepted events
+from Alignment.CommonAlignmentProducer.TkAlTriggerObjects_cff import *
+seqALCARECOTkAlJpsiX += seqTkAlTriggerObjects

@@ -81,6 +81,10 @@ seqALCARECOTkAlUpsilonMuMu = cms.Sequence(
     ALCARECOTkAlUpsilonMuMuResonances
 )
 
+# MiniAOD trigger objects (slimmedPatTrigger) for the accepted events
+from Alignment.CommonAlignmentProducer.TkAlTriggerObjects_cff import *
+seqALCARECOTkAlUpsilonMuMu += seqTkAlTriggerObjects
+
 ## customizations for the pp_on_AA eras
 from Configuration.Eras.Modifier_pp_on_XeXe_2017_cff import pp_on_XeXe_2017
 from Configuration.Eras.Modifier_pp_on_AA_2018_cff import pp_on_AA_2018
