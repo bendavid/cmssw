@@ -10,9 +10,13 @@
 #   Stage 3: 8-channel candidate merger + count filter (event gate).
 #   Stage 4: CompositeDaughterTrackProducer -- merged deduplicated leaf tracks.
 #   Stage 5: AlignmentTrackSelectorWithIndexMap + dE/dx projectors.
-#   Stage 6: 8 x VertexCompositeCandidateRemapper + track -> muon association.
+#   Stage 6: 8 x VertexCompositeCandidateRemapper + relinked muons.
 
 import FWCore.ParameterSet.Config as cms
+
+# JpsiXCandidateProducer needs the TransientTrackBuilder, which is not
+# otherwise loaded when the ALCA step runs on its own on RECO input.
+from TrackingTools.TransientTrack.TransientTrackBuilder_cfi import TransientTrackBuilderESProducer
 
 # ---------------------------------------------------------------------------
 # Stage 0 -- DCS filter + muon selectors (both filter=False; event gate is
@@ -233,16 +237,17 @@ ALCARECOTkAlJpsiXBcCandidates = cms.EDProducer('JpsiXCandidateProducer',
     applyJpsiMassConstraint = cms.bool(False),
 )
 
-# 8th channel: J/psi-only dimuon on the loose muon selector.
+# 8th channel: J/psi-only dimuon on the loose muon selector, with the same
+# pair selection as TkAlJpsiMuMu (2.7-3.4 GeV, no charge requirement).
 ALCARECOTkAlJpsiXJpsiOnlyCandidates = cms.EDProducer('TwoBodyDecayCandidateProducer',
     src           = cms.InputTag('generalTracks'),
     muonSrc       = cms.InputTag('ALCARECOTkAlJpsiXLooseMuons'),
-    minMass       = cms.double(2.95),
-    maxMass       = cms.double(3.25),
+    minMass       = cms.double(2.7),
+    maxMass       = cms.double(3.4),
     daughterMass  = cms.double(0.105),
     daughterPdgId = cms.int32(13),
     motherPdgId   = cms.int32(443),
-    applyChargeFilter        = cms.bool(True),
+    applyChargeFilter        = cms.bool(False),
     charge                   = cms.int32(0),
     useUnsignedCharge        = cms.bool(True),
     applyAcoplanarityFilter  = cms.bool(False),
@@ -345,11 +350,13 @@ ALCARECOTkAlJpsiXPsi2SResonances    = _remapper('ALCARECOTkAlJpsiXPsi2SCandidate
 ALCARECOTkAlJpsiXBcResonances       = _remapper('ALCARECOTkAlJpsiXBcCandidates')
 ALCARECOTkAlJpsiXJpsiOnlyResonances = _remapper('ALCARECOTkAlJpsiXJpsiOnlyCandidates')
 
-ALCARECOTkAlJpsiXTrackToMuon = cms.EDProducer('AlignmentTrackToMuonAssociator',
-    selectedTracks     = cms.InputTag('ALCARECOTkAlJpsiX'),
-    intermediateTracks = cms.InputTag('ALCARECOTkAlJpsiXAllTracks'),
-    originalIndexMap   = cms.InputTag('ALCARECOTkAlJpsiX', 'originalIndex'),
-    muons              = cms.InputTag('ALCARECOTkAlJpsiXLooseMuons'),
+# Loose muons with innerTrack re-pointed to the cloned tracks and the
+# standalone/global/TeV-refit tracks cloned alongside, plus the
+# track -> muon association (instance "trackToMuon").
+from Alignment.AlCaRecoMuons.AlCaRecoMuonRelinker_cfi import AlCaRecoMuonRelinker
+ALCARECOTkAlJpsiXMuons = AlCaRecoMuonRelinker.clone(
+    muons          = 'ALCARECOTkAlJpsiXLooseMuons',
+    selectedTracks = 'ALCARECOTkAlJpsiX',
 )
 
 # ---------------------------------------------------------------------------
@@ -376,7 +383,7 @@ seqALCARECOTkAlJpsiX = cms.Sequence(
     ALCARECOTkAlJpsiXCandFilter +
     ALCARECOTkAlJpsiXAllTracks +
     ALCARECOTkAlJpsiX +
-    ALCARECOTkAlJpsiXTrackToMuon +
+    ALCARECOTkAlJpsiXMuons +
     alcaDedxJointEstimator +
     ALCARECOTkAlJpsiXDeDxHarmonic2 +
     ALCARECOTkAlJpsiXDeDxPixelHarmonic2 +

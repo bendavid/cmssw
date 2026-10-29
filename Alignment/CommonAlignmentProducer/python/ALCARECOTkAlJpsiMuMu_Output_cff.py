@@ -8,8 +8,7 @@ OutALCARECOTkAlJpsiMuMu_noDrop = cms.PSet(
     outputCommands = cms.untracked.vstring(
         'keep *_ALCARECOTkAlJpsiMuMu_*_*',                        ## daughter tracks + extras + hits + clusters
         'keep *_ALCARECOTkAlJpsiMuMuResonances_*_*',              ## J/psi candidates with daughter refs
-        'keep *_ALCARECOTkAlJpsiMuMuGoodMuons_*_*',               ## tight muon selector output (reference for the muon comparison)
-        'keep *_ALCARECOTkAlJpsiMuMuTrackToMuon_*_*',             ## track -> muon association
+        'keep *_ALCARECOTkAlJpsiMuMuMuons_*_*',                   ## loose muons relinked to the cloned tracks, their standalone/global/refit tracks, track -> muon association
         'keep *_ALCARECOTkAlJpsiMuMuDeDxHarmonic2_*_*',           ## dE/dx strip Harmonic2
         'keep *_ALCARECOTkAlJpsiMuMuDeDxPixelHarmonic2_*_*',      ## dE/dx pixel Harmonic2
         'keep *_ALCARECOTkAlJpsiMuMuDeDxAllHarmonic2_*_*',        ## dE/dx joint strip+pixel

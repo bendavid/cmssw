@@ -23,16 +23,19 @@ ALCARECOTkAlJpsiMuMuDCSFilter = DPGAnalysis.Skims.skim_detstatus_cfi.dcsstatus.c
 
 import Alignment.CommonAlignmentProducer.TkAlMuonSelectors_cfi
 ALCARECOTkAlJpsiMuMuGoodMuons = Alignment.CommonAlignmentProducer.TkAlMuonSelectors_cfi.TkAlGoodIdMuonSelector.clone()
+# Loose muon id (same as the TkAlJpsiX J/psi-only channel); the tight
+# selector above is kept for the HI clone of this stream.
+ALCARECOTkAlJpsiMuMuLooseMuons = Alignment.CommonAlignmentProducer.TkAlMuonSelectors_cfi.TkAlLooseIdMuonSelector.clone()
 
 # Build the J/psi candidate collection upstream of AlignmentTrackSelector so
 # the candidate object survives downstream (V0-pattern, mirrors KsToPiPi).
 # All passing pairs are emitted (not the one-best of the legacy
 # AlignmentTwoBodyDecayTrackSelector); per-pair charge & mass cuts here mirror
 # the legacy TwoBodyDecaySelector configuration. Muon-id filter (replacing
-# applyGlobalMuonFilter) is enforced via muonSrc.
+# applyGlobalMuonFilter) is enforced via muonSrc (loose muon id).
 ALCARECOTkAlJpsiMuMuCandidates = cms.EDProducer('TwoBodyDecayCandidateProducer',
     src     = cms.InputTag('generalTracks'),
-    muonSrc = cms.InputTag('ALCARECOTkAlJpsiMuMuGoodMuons'),
+    muonSrc = cms.InputTag('ALCARECOTkAlJpsiMuMuLooseMuons'),
     minMass        = cms.double(2.7),  ## GeV
     maxMass        = cms.double(3.4),  ## GeV
     daughterMass   = cms.double(0.105),
@@ -104,24 +107,24 @@ ALCARECOTkAlJpsiMuMuDeDxAllHarmonic2 = ALCARECOTkAlJpsiMuMuDeDxHarmonic2.clone(
     sourceValueMap = cms.InputTag('alcaDedxJointEstimator'),
 )
 
-# Track -> reco::Muon association keyed on the cloned track collection, valued
-# into the persisted tight muon collection. Same pattern as J/psi+X.
-ALCARECOTkAlJpsiMuMuTrackToMuon = cms.EDProducer('AlignmentTrackToMuonAssociator',
-    selectedTracks     = cms.InputTag('ALCARECOTkAlJpsiMuMu'),
-    intermediateTracks = cms.InputTag('ALCARECOTkAlJpsiMuMuTracks'),
-    originalIndexMap   = cms.InputTag('ALCARECOTkAlJpsiMuMu', 'originalIndex'),
-    muons              = cms.InputTag('ALCARECOTkAlJpsiMuMuGoodMuons'),
+# Loose muons with innerTrack re-pointed to the cloned tracks and the
+# standalone/global/TeV-refit tracks cloned alongside, plus the
+# track -> muon association (instance "trackToMuon").
+from Alignment.AlCaRecoMuons.AlCaRecoMuonRelinker_cfi import AlCaRecoMuonRelinker
+ALCARECOTkAlJpsiMuMuMuons = AlCaRecoMuonRelinker.clone(
+    muons          = 'ALCARECOTkAlJpsiMuMuLooseMuons',
+    selectedTracks = 'ALCARECOTkAlJpsiMuMu',
 )
 
 seqALCARECOTkAlJpsiMuMu = cms.Sequence(
     ALCARECOTkAlJpsiMuMuHLT +
     ALCARECOTkAlJpsiMuMuDCSFilter +
-    ALCARECOTkAlJpsiMuMuGoodMuons +
+    ALCARECOTkAlJpsiMuMuLooseMuons +
     ALCARECOTkAlJpsiMuMuCandidates +
     ALCARECOTkAlJpsiMuMuTracks +
     ALCARECOTkAlJpsiMuMu +
     ALCARECOTkAlJpsiMuMuResonances +
-    ALCARECOTkAlJpsiMuMuTrackToMuon +
+    ALCARECOTkAlJpsiMuMuMuons +
     alcaDedxJointEstimator +
     ALCARECOTkAlJpsiMuMuDeDxHarmonic2 +
     ALCARECOTkAlJpsiMuMuDeDxPixelHarmonic2 +

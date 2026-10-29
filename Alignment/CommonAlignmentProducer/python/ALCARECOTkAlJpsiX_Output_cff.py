@@ -4,14 +4,16 @@ import FWCore.ParameterSet.Config as cms
 # AlCaReco output for TkAlJpsiX: B-meson and quarkonium alignment channels.
 #
 # Saved per event:
-#   - Cloned leaf tracks (+ extras + hits + clusters) from all 7 channels,
+#   - Cloned leaf tracks (+ extras + hits + clusters) from all 8 channels,
 #     deduplicated into a single ALCARECOTkAlJpsiX collection.
-#   - 7 per-channel candidate collections with daughter TrackRefs re-keyed
+#   - 8 per-channel candidate collections with daughter TrackRefs re-keyed
 #     onto ALCARECOTkAlJpsiX (no dangling generalTracks refs).
 #   - 3 dE/dx ValueMaps projected onto the cloned track collection
 #     (physically useful for kaon channels B+/B0->K*0/Bs and proton
 #     channel Lambda_b; saved for all tracks for uniformity).
-#   - Standard auxiliary: trigger results, DCS status, primary vertices.
+#   - Loose muons relinked to the cloned tracks (AlCaRecoMuonRelinker).
+#   - Standard auxiliary: trigger results, DCS status, primary vertices,
+#     plus the trigger content of TkAlExtraEventContent_cff.
 
 OutALCARECOTkAlJpsiX_noDrop = cms.PSet(
     SelectEvents = cms.untracked.PSet(
@@ -27,11 +29,10 @@ OutALCARECOTkAlJpsiX_noDrop = cms.PSet(
         'keep *_ALCARECOTkAlJpsiXB0KsResonances_*_*',         ## B0 -> J/psi Ks
         'keep *_ALCARECOTkAlJpsiXBsPhiResonances_*_*',        ## Bs -> J/psi phi
         'keep *_ALCARECOTkAlJpsiXLambdabResonances_*_*',      ## Lambda_b -> J/psi Lambda
-        'keep *_ALCARECOTkAlJpsiXPsi2SResonances_*_*',        ## psi(2S) -> J/psi Ks
+        'keep *_ALCARECOTkAlJpsiXPsi2SResonances_*_*',        ## psi(2S) -> J/psi pi+ pi-
         'keep *_ALCARECOTkAlJpsiXBcResonances_*_*',           ## Bc -> J/psi pi
         'keep *_ALCARECOTkAlJpsiXJpsiOnlyResonances_*_*',     ## J/psi-only (loose selector)
-        'keep *_ALCARECOTkAlJpsiXLooseMuons_*_*',             ## persisted muons (loose selector = superset of tight)
-        'keep *_ALCARECOTkAlJpsiXTrackToMuon_*_*',            ## track -> muon association
+        'keep *_ALCARECOTkAlJpsiXMuons_*_*',                  ## loose muons relinked to the cloned tracks, their standalone/global/refit tracks, track -> muon association
         'keep L1AcceptBunchCrossings_*_*_*',
         'keep L1GlobalTriggerReadoutRecord_gtDigis_*_*',
         'keep *_TriggerResults_*_*',
