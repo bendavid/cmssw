@@ -10,11 +10,12 @@ import FWCore.ParameterSet.Config as cms
 #     decisions (initial/final, prescale column)
 #   - gmtStage2Digis:Muon, caloStage2Digis:{EGamma,EtSum,Jet,Tau}: L1 objects
 #     read by the NanoAOD TriggerObjectTableProducer
-#   - hltGtStage2ObjectMap: L1 seed object combinations (only if available)
+# Not included: hltGtStage2ObjectMap (L1 seed object combinations, ~5.5 kB/event
+# in UL16 J/psi MC, more than all of the above together); add
+# 'keep *_hltGtStage2ObjectMap_*_*' if needed.
 # The legacy gtDigis record kept by the stock streams is empty for Stage-2.
 TkAlTriggerOutputCommands = cms.untracked.vstring(
     'keep triggerTriggerEvent_hltTriggerSummaryAOD_*_*',
-    'keep *_hltGtStage2ObjectMap_*_*',
     'keep *_gtStage2Digis__*',
     'keep *_gmtStage2Digis_Muon_*',
     'keep *_caloStage2Digis_EGamma_*',
