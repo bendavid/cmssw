@@ -20,6 +20,9 @@ OutALCARECOTkAlJpsiMuMu_noDrop = cms.PSet(
         'keep *_offlinePrimaryVertices_*_*')
 )
 
+from Alignment.CommonAlignmentProducer.TkAlExtraEventContent_cff import TkAlTriggerOutputCommands
+OutALCARECOTkAlJpsiMuMu_noDrop.outputCommands.extend(TkAlTriggerOutputCommands)
+
 import copy
 OutALCARECOTkAlJpsiMuMu = copy.deepcopy(OutALCARECOTkAlJpsiMuMu_noDrop)
 OutALCARECOTkAlJpsiMuMu.outputCommands.insert(0, "drop *")

@@ -40,5 +40,8 @@ OutALCARECOTkAlJpsiX_noDrop = cms.PSet(
     )
 )
 
+from Alignment.CommonAlignmentProducer.TkAlExtraEventContent_cff import TkAlTriggerOutputCommands
+OutALCARECOTkAlJpsiX_noDrop.outputCommands.extend(TkAlTriggerOutputCommands)
+
 OutALCARECOTkAlJpsiX = copy.deepcopy(OutALCARECOTkAlJpsiX_noDrop)
 OutALCARECOTkAlJpsiX.outputCommands.insert(0, 'drop *')

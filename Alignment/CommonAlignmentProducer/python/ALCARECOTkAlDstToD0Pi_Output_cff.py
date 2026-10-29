@@ -18,6 +18,9 @@ OutALCARECOTkAlDstToD0Pi_noDrop = cms.PSet(
         'keep *_offlinePrimaryVertices_*_*')
 )
 
+from Alignment.CommonAlignmentProducer.TkAlExtraEventContent_cff import TkAlTriggerOutputCommands
+OutALCARECOTkAlDstToD0Pi_noDrop.outputCommands.extend(TkAlTriggerOutputCommands)
+
 import copy
 OutALCARECOTkAlDstToD0Pi = copy.deepcopy(OutALCARECOTkAlDstToD0Pi_noDrop)
 OutALCARECOTkAlDstToD0Pi.outputCommands.insert(0, "drop *")

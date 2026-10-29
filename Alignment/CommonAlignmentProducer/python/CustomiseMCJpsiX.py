@@ -1,6 +1,6 @@
 # MC-only customise helpers for the inclusive B -> J/psi + X production.
 #
-# Currently exports one function used by cmsDriver's --customise flag:
+# Exports two functions for cmsDriver's --customise flag:
 #
 #   keepPileupSummaryInfo(process)
 #     Appends 'keep PileupSummaryInfos_*_*_*' to the ALCARECOTkAlJpsiX
@@ -10,6 +10,12 @@
 #     the only permitted MC-vs-data additive difference in the ALCARECO
 #     event content, per the openspec change
 #     add-mc-inclusive-btojpsix-2016postvfp.
+#
+#   keepMCTruth(process)
+#     Adds TkAlExtraEventContent_cff.TkAlMCTruthOutputCommands (generator
+#     record, pileup, genParticles, SimTracks/SimVertices, tracker PSimHits)
+#     to the TkAlJpsiMuMu, TkAlJpsiX, TkAlUpsilonMuMu and TkAlDstToD0Pi
+#     outputs.
 
 
 def keepPileupSummaryInfo(process):
@@ -25,5 +31,19 @@ def keepPileupSummaryInfo(process):
         if "TkAlJpsiX" not in out_name and "ALCARECOTkAlJpsiX" not in out_name:
             continue
         cmds.append(keep_line)
+        out_module.outputCommands = cmds
+    return process
+
+
+def keepMCTruth(process):
+    from Alignment.CommonAlignmentProducer.TkAlExtraEventContent_cff import TkAlMCTruthOutputCommands
+    streams = ("TkAlJpsiMuMu", "TkAlJpsiX", "TkAlUpsilonMuMu", "TkAlDstToD0Pi")
+    for out_name, out_module in process.outputModules.items():
+        if not hasattr(out_module, "outputCommands"):
+            continue
+        if out_name not in ["ALCARECOStream" + st for st in streams]:
+            continue
+        cmds = list(out_module.outputCommands)
+        cmds += [c for c in TkAlMCTruthOutputCommands if c not in cmds]
         out_module.outputCommands = cmds
     return process
