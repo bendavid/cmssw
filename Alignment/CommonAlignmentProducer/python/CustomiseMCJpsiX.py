@@ -15,7 +15,9 @@
 #     Adds TkAlExtraEventContent_cff.TkAlMCTruthOutputCommands (generator
 #     record, pileup, genParticles, SimTracks/SimVertices, tracker PSimHits)
 #     to the TkAlJpsiMuMu, TkAlJpsiX, TkAlUpsilonMuMu and TkAlDstToD0Pi
-#     outputs.
+#     outputs, and schedules for their paths slimmedAddPileupInfo (MiniAOD
+#     pileup slimming) and AlCaRecoSimTruthSelector as g4SimHits (generator
+#     muon SimTracks and their tracker PSimHits).
 
 
 def keepPileupSummaryInfo(process):
@@ -36,8 +38,18 @@ def keepPileupSummaryInfo(process):
 
 
 def keepMCTruth(process):
+    import FWCore.ParameterSet.Config as cms
     from Alignment.CommonAlignmentProducer.TkAlExtraEventContent_cff import TkAlMCTruthOutputCommands
+    from PhysicsTools.PatAlgos.slimming.slimmedAddPileupInfo_cfi import slimmedAddPileupInfo
+    from Alignment.AlCaRecoMuons.AlCaRecoSimTruthSelector_cfi import AlCaRecoSimTruthSelector
     streams = ("TkAlJpsiMuMu", "TkAlJpsiX", "TkAlUpsilonMuMu", "TkAlDstToD0Pi")
+    if not hasattr(process, "slimmedAddPileupInfo"):
+        process.slimmedAddPileupInfo = slimmedAddPileupInfo.clone()
+    if not hasattr(process, "g4SimHits"):
+        process.g4SimHits = AlCaRecoSimTruthSelector.clone()
+    for st in streams:
+        if hasattr(process, "pathALCARECO" + st):
+            getattr(process, "pathALCARECO" + st).associate(cms.Task(process.slimmedAddPileupInfo, process.g4SimHits))
     for out_name, out_module in process.outputModules.items():
         if not hasattr(out_module, "outputCommands"):
             continue

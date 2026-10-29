@@ -29,15 +29,22 @@ TkAlTriggerOutputCommands = cms.untracked.vstring(
 # gen and sim-hit association of the track refit (ResidualGlobalCorrectionMaker*:
 # genParticles incl. barcodes and xyz0, generator, pileup, SimTracks and the
 # tracker PSimHits). Added for MC only, see CustomiseMCJpsiX.keepMCTruth.
+# - Pileup is kept as slimmedAddPileupInfo, as in MiniAOD: the full
+#   PileupSummaryInfos are ~3.7 kB/event each under premixing, and premixed
+#   samples carry two copies (addPileupInfo and mixData).
+# - SimTracks/PSimHits are the selected ones (AlCaRecoSimTruthSelector, run as
+#   g4SimHits in the ALCA process: generator muons and their tracker hits);
+#   the full SIM-process collections are ~70 kB and ~190 kB/event in a full
+#   Pythia event and are dropped.
 TkAlMCTruthOutputCommands = cms.untracked.vstring(
     'keep GenRunInfoProduct_generator_*_*',
     'keep GenLumiInfoHeader_generator_*_*',
     'keep GenLumiInfoProduct_generator_*_*',
     'keep GenEventInfoProduct_generator_*_*',
     'keep *_genParticles_*_*',
-    'keep PileupSummaryInfos_*_*_*',
+    'keep *_slimmedAddPileupInfo_*_*',
     'keep int_*_bunchSpacing_*',
     'keep SimTracks_g4SimHits_*_*',
-    'keep SimVertexs_g4SimHits_*_*',
     'keep PSimHits_g4SimHits_TrackerHits*_*',
+    'drop *_g4SimHits_*_SIM',
 )
